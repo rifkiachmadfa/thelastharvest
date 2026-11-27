@@ -61,6 +61,7 @@ public static class MarsHudSkinSetup
         new Row("energyText", "energyBar", "Energy", "icons/energy.png", "bars/bar_gold.png"),
     };
     private static readonly Row HungerRow = new Row("hungerText", "hungerBar", "Hunger", "icons/heart.png", "bars/bar_red.png");
+    private static readonly Row HpRow = new Row("hpText", "hpBar", "Hp", "icons/heart.png", "bars/bar_red.png");
     private static readonly Row SuitRow = new Row("suitOxygenText", "suitBar", "Suit", "icons/astronaut.png", "cyan/progress_fill.png");
 
     [MenuItem("Mars/Apply HUD Skin (Pixel UI Sci-Fi)")]
@@ -107,16 +108,27 @@ public static class MarsHudSkinSetup
             report.AppendLine("- Panel resource: " + rows + " baris (ikon + teks + bar).");
         }
 
-        // 3. Kenyang (opsional): di bawah panel resource.
+        // 3. Kenyang (opsional): kiri atas. HP (opsional) tepat di bawahnya.
+        float hungerHeight = 0f;
         Text hungerText = GetRef<Text>(hud, HungerRow.TextField);
         if (hungerText != null)
         {
             BuildRow(hud, hungerText, HungerRow, 0, report);
             Transform hungerPanel = hungerText.transform.parent;
             SkinPanel(hungerPanel, panelSprite);
-            float y = -(ScreenMargin + resourceHeight + (resourceHeight > 0f ? PanelGap : 0f));
-            PlacePanel(hungerPanel, new Vector2(1f, 1f), new Vector2(-ScreenMargin, y), 1);
+            hungerHeight = PlacePanel(hungerPanel, new Vector2(0f, 1f), new Vector2(ScreenMargin, -ScreenMargin), 1);
             report.AppendLine("- Panel Kenyang diberi skin.");
+        }
+
+        Text hpText = GetRef<Text>(hud, HpRow.TextField);
+        if (hpText != null)
+        {
+            BuildRow(hud, hpText, HpRow, 0, report);
+            Transform hpPanel = hpText.transform.parent;
+            SkinPanel(hpPanel, panelSprite);
+            float y = -(ScreenMargin + hungerHeight + (hungerHeight > 0f ? PanelGap : 0f));
+            PlacePanel(hpPanel, new Vector2(0f, 1f), new Vector2(ScreenMargin, y), 1);
+            report.AppendLine("- Panel HP diberi skin.");
         }
 
         // 4. Suit O2 (opsional): kiri bawah.

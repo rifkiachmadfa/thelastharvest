@@ -101,12 +101,12 @@ public static class MarsHungerSetup
             GameObject panel = MarsUISetup.GetOrCreatePanel(hud.transform, "HungerPanel", out created);
             if (created)
             {
-                // Kanan atas, di bawah ResourcePanel (mulai -20, tinggi 190) dan IcePanel (mulai -220, tinggi 56).
+                // Kiri atas (sejak 2026-11-27; sebelumnya kanan atas).
                 RectTransform r = panel.GetComponent<RectTransform>();
-                r.anchorMin = new Vector2(1f, 1f);
-                r.anchorMax = new Vector2(1f, 1f);
-                r.pivot = new Vector2(1f, 1f);
-                r.anchoredPosition = new Vector2(-20f, -286f);
+                r.anchorMin = new Vector2(0f, 1f);
+                r.anchorMax = new Vector2(0f, 1f);
+                r.pivot = new Vector2(0f, 1f);
+                r.anchoredPosition = new Vector2(20f, -20f);
                 r.sizeDelta = new Vector2(300f, 56f);
             }
 
@@ -122,7 +122,7 @@ public static class MarsHungerSetup
             }
 
             MarsUISetup.SetRef(hud, "hungerText", hungerText);
-            report.AppendLine("- Teks Kenyang dibuat di kanan atas HUD, di bawah panel Ice.");
+            report.AppendLine("- Teks Kenyang dibuat di kiri atas HUD.");
         }
 
         EditorSceneManager.MarkSceneDirty(player.gameObject.scene);

@@ -27,7 +27,6 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan 
 | `Assets/Script/NPC/TarsWanderer.cs` | TARS acak di `BoxCollider2D` area; state Idle/Moving/Interacting; sprite per arah lewat array Inspector; event `OnPlayerTalked` saat dialog E dibuka (dipakai `TutorialManager`) |
 | `Assets/Script/Resource/ResourceType.cs` | Enum jenis resource (Ice, Water, HabitatOxygen, SuitOxygen, Energy, Food) |
 | `Assets/Script/Resource/ResourceManager.cs` | Stok, kapasitas, `Add`/`TryConsume`, event perubahan. Dipasang pada GameObject `ResourceManager` di scene |
-| `Assets/Script/Resource/ResourceDebugPanel.cs` | Alat uji sementara (OnGUI). Hapus saat HUD sungguhan ada |
 | `Assets/Script/Time/TimeManager.cs` | Hari, timer harian, timer harian (pause saat dialog opsional lewat `pauseDuringDialogue`, default mati), event hari. Dipasang pada GameObject `TimeManager` |
 | `Assets/Script/UI/HudUI.cs` | Tampilan Day, timer, Food, Water, Oxygen, Energy, Ice (opsional, `iceText`). Dipasang pada `HudRoot` di Canvas |
 | `Assets/Script/Interaction/Bed.cs` | Tempat tidur (IInteractable): tidur, fade, hari berikutnya. Dipasang pada GameObject `Bed` (layer `Interactable`, BoxCollider2D, anak `SpawnPoint`) |
@@ -57,6 +56,7 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan 
 | `Assets/Script/UI/WiringMinigameUI.cs` | Minigame kabel (3-4 kabel, drag-and-drop mouse). Dipasang pada Canvas; UI dibuat lewat kode saat Awake (anak `WiringMinigameRoot`) |
 | `Assets/Editor/MarsRepairSetup.cs` | Menu Editor `Mars > Setup Panel Damage and Wiring Minigame`: pasang `WiringMinigameUI` di Canvas, buat `SolarPanelDamageScheduler`, sambungkan `RepairPoint` |
 | `Assets/Script/Survival/HungerSystem.cs` | Kenyang pemain (0-100), berkurang selama gameplay, `Feed()` dipanggil InventorySystem saat makan kentang, event `OnSatietyChanged`, `OnStarvationFailure`. Dipasang pada GameObject `HungerSystem` |
+| `Assets/Script/Survival/HealthSystem.cs` | HP pemain (0-100). Berkurang tiap `damageInterval` (2 dtk) sebesar `damageAmount` (3) selama kenyang 0; ikut `TimeManager.IsPaused`; event `OnHealthChanged`, `OnDied` (hanya log). Dipasang pada GameObject `HealthSystem` lewat menu (2026-11-27, belum dites) |
 | `Assets/Script/Survival/HungerReminder.cs` | Pesan TARS (teks tetap) saat kenyang melewati 30%, 10%, 0; lewat antrean `TARSSystem` bila ada, dialog langsung bila tidak. Dipasang pada GameObject `HungerSystem` oleh menu setup |
 | `Assets/Script/Station/FoodStorage.cs` | Storage di Control Room (IInteractable "Buka storage"): membuka `StorageUI`. Nama class lama dipertahankan. Layer `Interactable`, Collider2D Is Trigger |
 | `Assets/Script/Inventory/ItemType.cs` | Enum item tas: Potato (1), Ice (2), Seed (3) |
@@ -65,7 +65,9 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan 
 | `Assets/Script/UI/InventoryHotbarUI.cs` | Hotbar 3 slot di bawah tengah layar (dibuat lewat kode di bawah Canvas) |
 | `Assets/Script/UI/StorageUI.cs` | Panel storage (dibuat lewat kode di bawah Canvas): Simpan/Ambil dengan mouse, Esc menutup |
 | `Assets/Editor/MarsInventorySetup.cs` | Menu Editor `Mars > Setup Inventory and Storage`: InventorySystem, hotbar, StorageUI, objek Storage, menyembunyikan IcePanel lama |
-| `Assets/Editor/MarsHungerSetup.cs` | Menu Editor `Mars > Setup Hunger and Food Storage`: membuat HungerSystem, HungerReminder, FoodStorage, dan `HudRoot/HungerPanel` (teks Kenyang) |
+| `Assets/Editor/MarsHungerSetup.cs` | Menu Editor `Mars > Setup Hunger and Food Storage`: membuat HungerSystem, HungerReminder, FoodStorage, dan `HudRoot/HungerPanel` (teks Kenyang, kiri atas sejak 2026-11-27) |
+| `Assets/Editor/MarsSolarRepairSetup.cs` | Menu Editor `Mars > Setup Solar Panel Names`: ganti nama "SolarPanel" menjadi "Solar Panel N"; hapus RepairPoint anak panel buatan menu lama. Satu RepairPoint melayani semua panel |
+| `Assets/Editor/MarsHealthSetup.cs` | Menu Editor `Mars > Setup Health and HP HUD`: membuat `HealthSystem` dan `HudRoot/HpPanel` (gandaan HungerPanel, di bawahnya, kiri atas), mengisi `HudUI.hpText`/`hpBar` |
 | `Assets/Script/Machines/WaterPurifier.cs` | Water Purifier (IInteractable): Ice + Energy -> Water, proses beberapa detik, `IsProcessing`, `OnProcessingChanged`, indikator opsional |
 | `Assets/Script/Machines/OxygenGenerator.cs` | Oxygen Generator (IInteractable): Water + Energy -> HabitatOxygen otomatis per siklus (10 Oxygen per 1 Water sejak 2026-11-17); siaga sampai oksigen habitat <= `restartBelowFraction` (0,4) lalu mengisi sampai penuh; E = nyalakan/matikan (USULAN); `IsOn`, `IsRunning`, `StatusText`. Nilai serialized di `SampleScene.unity` (`oxygenPerCycle`, `SuitSystem.drainPerSecond`) ikut diubah 2026-11-17 |
 | `Assets/Script/Farming/FarmingPlot.cs` | Satu petak kentang (IInteractable): tanam, siram (Water), tumbuh waktu nyata setelah satu kali siram, panen acak (kentang dan bibit). Satu objek = satu petak |
@@ -88,7 +90,7 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan 
 **TARS:** SpriteRenderer, Rigidbody2D (Dynamic, Gravity Scale 0, Freeze Rotation Z), BoxCollider2D (bukan trigger), layer `Interactable`, komponen `TarsWanderer` (isi Wander Area, Dialogue UI, Tars System (otomatis dicari), array frame per arah).
 **TarsArea:** GameObject dengan BoxCollider2D, Is Trigger dicentang.
 **Player:** komponen `InteractionDetector` dengan Interactable Layer = `Interactable`.
-**ResourceManager:** GameObject kosong `ResourceManager` di scene dengan komponen `ResourceManager` dan `ResourceDebugPanel` (dipasang manual oleh developer; tidak ada di patch) [Dev].
+**ResourceManager:** GameObject kosong `ResourceManager` di scene dengan komponen `ResourceManager`. Komponen `ResourceDebugPanel` dihapus 2026-11-27 (script dan scene di patch).
 **TimeManager dan HUD:** dibuat lewat menu Mars > Setup HUD and Time (GameObject `TimeManager`; `Canvas/HudRoot` berisi `TimePanel` dan `ResourcePanel`). Perubahan scene dilakukan developer, belum diverifikasi AI [?].
 **Bed dan Fade:** dibuat lewat menu Mars > Setup Bed and Fade (`Canvas/FadeOverlay`; GameObject `Bed` dengan anak `SpawnPoint`). Sprite Bed belum ada (placeholder oleh developer). Posisi di scene: [Dev], belum diverifikasi [?].
 **Suit dan Gate:** dibuat lewat menu Mars > Setup Suit and Gate (placeholder di sekitar Player). WAJIB diposisikan developer: `IndoorZone` menutupi seluruh interior dengan tepi sejajar pintu; `SuitGate` di pintu dan menutup seluruh lebar pintu; `SuitStation` di Control Room dengan sprite. Posisi akhir: [Dev], belum diverifikasi [?].

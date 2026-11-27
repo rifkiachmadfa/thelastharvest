@@ -492,7 +492,9 @@ public class TARSSystem : MonoBehaviour
         {
             Message m = pending[i];
             bool invalid = m.isStillValid != null && !m.isStillValid();
-            bool expired = m.priority != Priority.Critical && Time.time - m.queuedAt > expirySeconds;
+            // Pesan panel rusak tidak kedaluwarsa selama panel masih rusak (isStillValid yang membuangnya).
+            bool neverExpires = m.priority == Priority.Critical || m.key.StartsWith("panel:");
+            bool expired = !neverExpires && Time.time - m.queuedAt > expirySeconds;
             if (invalid || expired) pending.RemoveAt(i);
         }
 

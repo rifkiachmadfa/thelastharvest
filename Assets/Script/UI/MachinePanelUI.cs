@@ -122,7 +122,7 @@ public class MachinePanelUI : MonoBehaviour
     /// </summary>
     public bool Open(SolarPanel target, Action repairCallback, Action onClosedCallback, string initialFeedback)
     {
-        if (target == null || !BeginOpen(Mode.Solar, "Solar Panel", onClosedCallback)) return false;
+        if (target == null || !BeginOpen(Mode.Solar, string.IsNullOrEmpty(target.name) ? "Solar Panel" : target.name, onClosedCallback)) return false;
 
         solarPanel = target;
         onRepairRequested = repairCallback;
@@ -376,7 +376,26 @@ public class MachinePanelUI : MonoBehaviour
 
         primaryLabel.text = "PERBAIKI";
         primaryButton.interactable = damaged;
-        hintText.text = damaged ? "Sambungkan kabel dengan warna yang sama untuk memperbaiki panel." : "Panel berfungsi normal.";
+        if (damaged)
+        {
+            hintText.text = "Sambungkan kabel dengan warna yang sama untuk memperbaiki panel.";
+        }
+        else if (damagedCount > 0)
+        {
+            // Panel ini normal, tombol PERBAIKI nonaktif: tunjukkan panel mana yang rusak.
+            System.Text.StringBuilder names = new System.Text.StringBuilder();
+            for (int i = 0; i < allPanels.Length; i++)
+            {
+                if (allPanels[i] == null || !allPanels[i].IsDamaged) continue;
+                if (names.Length > 0) names.Append(", ");
+                names.Append(allPanels[i].name);
+            }
+            hintText.text = "Panel ini normal. Panel yang rusak: " + names + ".";
+        }
+        else
+        {
+            hintText.text = "Panel berfungsi normal.";
+        }
     }
 
     private static float Fraction(float value, float max) => max > 0f ? Mathf.Clamp01(value / max) : 0f;

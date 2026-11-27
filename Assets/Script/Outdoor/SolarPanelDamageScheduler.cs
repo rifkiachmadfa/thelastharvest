@@ -91,15 +91,28 @@ public class SolarPanelDamageScheduler : MonoBehaviour
     private void TriggerDamage()
     {
         SolarPanel[] allPanels = FindObjectsByType<SolarPanel>(FindObjectsSortMode.None);
+        RepairPoint[] repairPoints = FindObjectsByType<RepairPoint>(FindObjectsSortMode.None);
         List<SolarPanel> healthy = new List<SolarPanel>();
+        int unrepairable = 0;
         foreach (SolarPanel candidate in allPanels)
         {
-            if (!candidate.IsDamaged) healthy.Add(candidate);
+            if (candidate.IsDamaged) continue;
+
+            // Hanya panel yang dilayani sebuah RepairPoint yang boleh dirusak; kalau tidak, panel rusak tanpa jalan perbaikan (stuck).
+            if (!HasRepairPoint(candidate, repairPoints))
+            {
+                unrepairable++;
+                continue;
+            }
+            healthy.Add(candidate);
         }
+
+        if (unrepairable > 0)
+            Debug.LogWarning("SolarPanelDamageScheduler: " + unrepairable + " Solar Panel tidak dilayani RepairPoint mana pun dan dilewati. Pastikan ada RepairPoint di scene.", this);
 
         if (healthy.Count == 0)
         {
-            Debug.Log("SolarPanelDamageScheduler: tidak ada panel normal, kejadian kerusakan hari ini dilewati.");
+            Debug.Log("SolarPanelDamageScheduler: tidak ada panel normal yang bisa diperbaiki, kejadian kerusakan hari ini dilewati.");
             return;
         }
 
@@ -109,6 +122,15 @@ public class SolarPanelDamageScheduler : MonoBehaviour
 
         if (announceWithDialogue && TARSSystem.Instance == null)
             pendingMessage = chosen.name + " mengalami gangguan. Produksi energi menurun.";
+    }
+
+    private static bool HasRepairPoint(SolarPanel panel, RepairPoint[] repairPoints)
+    {
+        foreach (RepairPoint point in repairPoints)
+        {
+            if (point != null && point.Serves(panel)) return true;
+        }
+        return false;
     }
 
     // Dialog tidak ditumpuk: pesan menunggu sampai dialog lain dan minigame tertutup.

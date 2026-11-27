@@ -75,3 +75,11 @@ Format keputusan baru:
 - Keputusan: (b), hanya subset yang dipakai HUD, disalin ke `Assets/UI/PixelUISciFi/` beserta `CREDITS.txt`. Skala piksel 2x, ikon/warna bar adalah USULAN. HUD tetap memakai `UnityEngine.UI.Text` dan font bawaan (font BMFont aset tidak dipakai).
 - Alasan: bisa diverifikasi isinya, lisensi jelas, tanpa dependensi Godot, perubahan HUD kecil dan opsional (bar bersifat tambahan).
 - Dampak file/sistem: `HudUI` (field bar opsional), `HudBar`, `MarsHudSkinSetup`, aset UI. Kewajiban atribusi CC BY 4.0 di credits game.
+
+## HP pemain dan kelaparan (2026-11-27)
+- Tanggal: 2026-11-27
+- Konteks/masalah: Developer: bila kenyang habis HP harus berkurang tiap 2 detik; script HP belum ada.
+- Opsi: (a) HP di `ResourceManager`; (b) HP sebagai `HealthSystem` sendiri seperti `HungerSystem`; (c) HP digabung ke `HungerSystem`.
+- Keputusan: (b). Jeda 2 detik sesuai permintaan; HP maksimum 100 dan 3 HP per tick adalah USULAN (belum disetujui). Pemulihan HP: awalnya tidak ada; DIGANTI atas permintaan developer: HP pulih bertahap (USULAN +2 per 2 dtk) selama kenyang > 80 persen. `HungerSystem` (hitung mundur 60 dtk, `OnStarvationFailure`) tidak diubah.
+- Alasan: tidak mengubah array setting `ResourceManager` di scene; pola sama dengan hunger; perubahan kecil dan terpisah.
+- Dampak file/sistem: `HealthSystem`, `HudUI`, `MarsHealthSetup`. Terbuka: HP pulih atau tidak, dan Game Over memakai HP 0 atau batas 60 detik (HP penuh habis sekitar 67 dtk, mendekati batas itu).

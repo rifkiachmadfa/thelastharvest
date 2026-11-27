@@ -5,6 +5,7 @@ using UnityEngine.UI;
 /// HUD gameplay: hari, timer, serta Food, Water, Oxygen (habitat), dan Energy.
 /// Hanya tampilan: membaca ResourceManager (lewat event) dan TimeManager.
 /// Kenyang (hunger pemain) tampil di hungerText (opsional) dan membaca HungerSystem lewat event.
+/// HP pemain tampil di hpText (opsional) dan membaca HealthSystem lewat event.
 /// Suit Oxygen tampil di panel opsional (suitPanel) hanya saat suit dikenakan. Isi tas tampil di InventoryHotbarUI.
 /// Food = jumlah kentang di storage.
 /// </summary>
@@ -23,6 +24,7 @@ public class HudUI : MonoBehaviour
     [SerializeField] private HudBar oxygenBar;
     [SerializeField] private HudBar energyBar;
     [SerializeField] private HudBar hungerBar;
+    [SerializeField] private HudBar hpBar;
     [SerializeField] private HudBar suitBar;
 
     [Header("Ice (TIDAK DIPAKAI LAGI sejak ada tas; ditampilkan InventoryHotbarUI. Biarkan kosong)")]
@@ -30,6 +32,12 @@ public class HudUI : MonoBehaviour
 
     [Header("Kenyang / hunger (opsional; diisi menu Mars > Setup Hunger and Food Storage)")]
     [SerializeField] private Text hungerText;
+
+    [Header("HP (opsional; diisi menu Mars > Setup Health and HP HUD)")]
+    [SerializeField] private Text hpText;
+    [Tooltip("Teks berubah kuning/merah di bawah proporsi ini dari HP maksimum (usulan).")]
+    [SerializeField, Range(0f, 1f)] private float hpWarnFraction = 0.5f;
+    [SerializeField, Range(0f, 1f)] private float hpDangerFraction = 0.25f;
 
     [Header("Suit (opsional; diisi menu Mars > Setup Suit and Gate)")]
     [SerializeField] private GameObject suitPanel;
@@ -42,7 +50,9 @@ public class HudUI : MonoBehaviour
     private TimeManager time;
     private SuitSystem suit;
     private HungerSystem hunger;
+    private HealthSystem health;
     private int shownHungerValue = -1;
+    private int shownHpValue = -1;
     private int shownSeconds = -1;
     private int shownSuitValue = -1;
 
@@ -88,6 +98,10 @@ public class HudUI : MonoBehaviour
         hunger = HungerSystem.Instance;
         if (hunger != null) hunger.OnSatietyChanged += HandleSatietyChanged;
         RefreshHunger();
+
+        health = HealthSystem.Instance;
+        if (health != null) health.OnHealthChanged += HandleHealthChanged;
+        RefreshHealth();
     }
 
     private void OnDestroy()
@@ -96,6 +110,7 @@ public class HudUI : MonoBehaviour
         if (time != null) time.OnDayStarted -= HandleDayStarted;
         if (suit != null) suit.OnEquippedChanged -= HandleSuitEquippedChanged;
         if (hunger != null) hunger.OnSatietyChanged -= HandleSatietyChanged;
+        if (health != null) health.OnHealthChanged -= HandleHealthChanged;
     }
 
     private void Update()
@@ -127,6 +142,28 @@ public class HudUI : MonoBehaviour
     private void HandleSatietyChanged(float satiety, float max)
     {
         RefreshHunger();
+    }
+
+    private void HandleHealthChanged(float hp, float max)
+    {
+        RefreshHealth();
+    }
+
+    private void RefreshHealth()
+    {
+        if (hpText == null || health == null) return;
+
+        int rounded = Mathf.RoundToInt(health.Health);
+        if (rounded == shownHpValue) return; // hindari menulis teks yang sama
+        shownHpValue = rounded;
+
+        hpText.text = "HP: " + rounded + " / " + Mathf.RoundToInt(health.MaxHealth);
+
+        float fraction = health.Fraction;
+        if (hpBar != null) hpBar.SetFraction(fraction);
+        if (fraction <= hpDangerFraction) hpText.color = new Color(1f, 0.35f, 0.3f);
+        else if (fraction <= hpWarnFraction) hpText.color = new Color(1f, 0.85f, 0.3f);
+        else hpText.color = Color.white;
     }
 
     private void RefreshHunger()

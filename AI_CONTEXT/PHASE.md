@@ -370,8 +370,8 @@ Acuan: GDD 19 hari 14; GDD 14, 15. Status: **SEBAGIAN** (3 selesai, 3 sebagian, 
 - [x] `14.3.5` Label status tetap di atas `FarmingPlot` (2026-11-17, permintaan developer, agar pemain tidak spam interaksi): "Belum disiram (M:SS)" sejak ditanam, "Matang M:SS" menghitung mundur setelah disiram, "Siap panen!" saat matang, kosong bila petak kosong. Durasi tumbuh kini diundi saat TANAM (sebelumnya saat siram) supaya langsung tampil; pertumbuhan tetap baru berjalan setelah disiram. Popup petak dinaikkan agar tidak menimpa label. `FloatingPopupManager.CreateWorldLabel`, flag `showStatusLabel`. Belum dikompilasi/dites
 - [~] `14.3.4` Ikon dan font popup final: saat ini ikon pixel 8x8 bawaan dibuat lewat kode (placeholder); sprite dari itch.io dan font piksel belum diimpor, diisi lewat slot Inspector `FloatingPopupManager`
 
-**14.4 Pembersihan** (0/3)
-- [ ] `14.4.1` Hapus `ResourceDebugPanel`
+**14.4 Pembersihan** (1/3)
+- [x] `14.4.1` Hapus `ResourceDebugPanel` (2026-11-27, permintaan developer; script dan komponen scene dihapus, belum dites di Unity)
 - [ ] `14.4.2` `Assets/_Recovery`, `Assets/Welcome`, dan `.meta` tanpa folder
 - [ ] `14.4.3` `.gitignore` untuk `*.patch` dan `Assets/_Recovery/`
 
@@ -422,7 +422,7 @@ Keputusan terbuka lain: deposit es tak terbatas (usulan: ya), angka balancing se
 | `Interaction/Bed` | Tidur: kunci gerak, fade, lepas suit, `StartDay(day+1)`, pindah ke `SpawnPoint`. Boleh tidur bila sisa waktu <= 120 dtk (usulan). |
 | `Resource/ResourceManager` | Satu-satunya stok: Ice, Water, HabitatOxygen, SuitOxygen, Energy, Food. API: `Get`, `GetMax`, `Has`, `Add`, `TryConsume`, event `OnResourceChanged`. |
 | `Resource/ResourceType` | Enum 6 jenis stok |
-| `Resource/ResourceDebugPanel` | Alat uji sementara, boleh dihapus kelak |
+| `Survival/HealthSystem` | HP pemain; berkurang tiap 2 dtk (USULAN 3 HP) selama kenyang 0; `OnHealthChanged`, `OnDied` (2026-11-27, belum dites) |
 | `Time/TimeManager` | Hari, timer 600 dtk (usulan), 7 hari, `ExternalPause`, `OnDayStarted`, `OnDayTimeEnded`. Dialog tidak menjeda timer secara default. |
 | `Suit/SuitSystem` | Equip/Unequip, refill dari habitat, drain oksigen, `IsOutdoors`, event `OnSuitOxygenEmpty` |
 | `Suit/SuitStation`, `SuitGate`, `IndoorZone`, `SuitReminder` | Interaksi suit, tembok pintu keluar, zona dalam habitat, pengingat "lepas suit" (`SuitReminder` menonaktifkan diri bila `TARSSystem` ada) |

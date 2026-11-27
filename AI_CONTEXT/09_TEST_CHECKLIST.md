@@ -315,3 +315,19 @@ Siapkan: jalankan `Mars > Setup HUD and Time` (dan Suit/Hunger bila dipakai), la
 - [ ] SuitPanel hanya tampil saat suit dikenakan; bar Suit O2 turun di luar dan naik saat isi ulang.
 - [ ] Jendela Game lebih kecil / rasio lain (mis. 1280x720, 16:10): panel tetap di sudutnya dan terbaca.
 - [ ] Hapus semua field bar di Inspector `HudUI` (uji saja): HUD tetap berfungsi dengan teks saja, tanpa error.
+
+## HP, HUD kenyang kiri atas, hapus debug panel (2026-11-27; BARU, belum dites di Unity)
+- [ ] Setelah menyimpan scene: tidak ada panel debug +/- resource di kiri atas Game view; tidak ada error kompilasi atau komponen hilang di GameObject `ResourceManager`.
+- [ ] Panel Kenyang tampil di kiri atas; panel HP tepat di bawahnya (jalankan `Mars > Setup Health and HP HUD` dulu); panel resource tetap di kanan atas, panel Day/timer tetap di tengah atas.
+- [ ] Play: HP awal 100 / 100 dan tidak berubah selama kenyang > 0.
+- [ ] Buat kenyang 0 (ContextMenu `Debug: Kenyang jadi 0` pada HungerSystem): sekitar 2 detik kemudian HP turun 3, lalu 3 lagi tiap 2 detik; teks HP kuning di bawah 50 persen dan merah di bawah 25 persen.
+- [ ] Makan kentang saat HP sudah turun: HP berhenti berkurang. Bila kenyang naik di atas 80 persen, HP naik +2 tiap 2 detik sampai penuh; di bawah 80 persen HP tidak naik.
+- [ ] Lapar lagi setelah makan: pengurangan HP mulai lagi dari hitungan 2 detik penuh (bukan langsung).
+- [ ] Saat timer berhenti (transisi tidur/minigame): HP tidak berkurang.
+- [ ] HP sampai 0: Console menampilkan peringatan "HP habis" satu kali; HP tidak negatif; tidak ada Game Over.
+
+## Solar Panel: satu RepairPoint melayani semua panel (2026-11-27; BARU, belum dites di Unity)
+- [ ] (Opsional) `Mars > Setup Solar Panel Names`: panel diberi nama Solar Panel 1..N; RepairPoint tambahan buatan menu lama terhapus; RepairPoint asli tetap ada.
+- [ ] Rusakkan panel MANA SAJA (klik kanan komponen `SolarPanel` > Debug: Rusakkan panel), datangi RepairPoint, tekan E: panel mesin menampilkan panel rusak itu (status RUSAK), tombol PERBAIKI aktif; selesaikan minigame; panel jadi NORMAL.
+- [ ] Rusakkan dua panel: setelah memperbaiki yang pertama, panel yang sama tetap terbuka dengan pesan "Masih ada 1 panel rusak" dan menawarkan panel rusak berikutnya; prompt E memuat jumlah rusak.
+- [ ] Pesan TARS "Solar Panel N mengalami gangguan..." muncul dan tidak hilang sebelum tampil.
