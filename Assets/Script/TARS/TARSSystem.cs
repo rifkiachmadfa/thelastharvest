@@ -87,7 +87,6 @@ public class TARSSystem : MonoBehaviour
 
     private readonly List<Message> pending = new List<Message>();
     private readonly Dictionary<string, float> nextAllowedByKey = new Dictionary<string, float>();
-    private readonly Dictionary<SolarPanel, Action<bool>> panelHandlers = new Dictionary<SolarPanel, Action<bool>>();
     private readonly int[] announcedLevel = new int[ResourceCount];
 
     private ResourceManager resources;
@@ -145,8 +144,9 @@ public class TARSSystem : MonoBehaviour
             if (announceDayAtStart) AnnounceDayStart(time.CurrentDay);
         }
 
-        foreach (SolarPanel panel in FindObjectsByType<SolarPanel>(FindObjectsSortMode.None))
-            WatchPanel(panel);
+        // Semua Solar Panel berbagi satu status rusak, jadi cukup satu langganan.
+        SolarPanel.OnArrayDamagedChanged += HandleSolarDamaged;
+        if (SolarPanel.ArrayDamaged) HandleSolarDamaged(true);
     }
 
     private void OnDestroy()
@@ -161,11 +161,7 @@ public class TARSSystem : MonoBehaviour
             time.OnDayTimeEnded -= HandleDayTimeEnded;
         }
 
-        foreach (KeyValuePair<SolarPanel, Action<bool>> pair in panelHandlers)
-        {
-            if (pair.Key != null) pair.Key.OnDamagedChanged -= pair.Value;
-        }
-        panelHandlers.Clear();
+        SolarPanel.OnArrayDamagedChanged -= HandleSolarDamaged;
     }
 
     private void Update()
@@ -406,29 +402,18 @@ public class TARSSystem : MonoBehaviour
 
     // ---------- Solar Panel ----------
 
-    private void WatchPanel(SolarPanel panel)
+    private void HandleSolarDamaged(bool damaged)
     {
-        if (panel == null || panelHandlers.ContainsKey(panel)) return;
+        if (!damaged) return;
 
-        Action<bool> handler = damaged => HandlePanelDamaged(panel, damaged);
-        panelHandlers[panel] = handler;
-        panel.OnDamagedChanged += handler;
-
-        if (panel.IsDamaged) HandlePanelDamaged(panel, true);
-    }
-
-    private void HandlePanelDamaged(SolarPanel panel, bool damaged)
-    {
-        if (!damaged || panel == null) return;
-
-        // Kunci unik per objek panel. GetInstanceID() sudah obsolete (error) di Unity 6000.6.
-        Announce("panel:" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(panel), Priority.Warning,
+        // Satu kunci untuk seluruh Solar Panel (awalan "panel:" dipakai ProcessQueue agar pesan tidak kedaluwarsa).
+        Announce("panel:solar", Priority.Warning,
             () => new[]
             {
-                panel.name + " mengalami gangguan. Produksi energi menurun. " +
-                "Panel dapat diperbaiki di Repair Point outdoor."
+                "Solar Panel mengalami gangguan. Produksi energi berhenti sampai diperbaiki. " +
+                "Solar Panel dapat diperbaiki di Repair Point outdoor."
             },
-            () => panel != null && panel.IsDamaged);
+            () => SolarPanel.ArrayDamaged);
     }
 
     // ---------- Hari ----------
@@ -541,17 +526,13 @@ public class TARSSystem : MonoBehaviour
         }
         else
         {
-            int damaged = 0;
             float energyPerSecond = 0f;
-            foreach (SolarPanel panel in panels)
-            {
-                if (panel.IsDamaged) damaged++;
-                energyPerSecond += panel.CurrentEnergyPerSecond;
-            }
+            foreach (SolarPanel panel in panels) energyPerSecond += panel.CurrentEnergyPerSecond;
 
-            sb.Append("Solar Panel: " + (panels.Length - damaged) + " normal, " + damaged + " rusak dari " +
-                      panels.Length + ". Produksi Energy sekitar " + energyPerSecond.ToString("0.0") + " per detik. ");
-            if (damaged > 0) sb.Append("Panel rusak diperbaiki di Repair Point outdoor. ");
+            if (SolarPanel.ArrayDamaged)
+                sb.Append("Solar Panel: RUSAK, produksi Energy berhenti. Diperbaiki di Repair Point outdoor. ");
+            else
+                sb.Append("Solar Panel: normal. Produksi Energy sekitar " + energyPerSecond.ToString("0.0") + " per detik. ");
         }
 
         foreach (WaterPurifier purifier in FindObjectsByType<WaterPurifier>(FindObjectsSortMode.None))

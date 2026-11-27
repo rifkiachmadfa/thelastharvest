@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Panel kontrol mesin dengan tampilan sendiri (bukan dialog TARS): Water Purifier (tombol PROSES, bar proses,
 /// Energy, tangki Water), Oxygen Generator (tombol NYALAKAN/MATIKAN, status, oksigen habitat, Water, Energy) dan
-/// Solar Panel (status normal/rusak, output panel, output total, Energy, tombol PERBAIKI yang membuka minigame kabel).
+/// Solar Panel (satu status normal/rusak untuk semua panel, output total, Energy, tombol PERBAIKI yang membuka minigame kabel).
 /// Tutup dengan tombol Tutup atau Esc. Selama terbuka, gerakan Player dikunci (nilai sebelumnya dipulihkan saat
 /// ditutup); waktu hari dan mesin TETAP berjalan (sama seperti StorageUI), jadi bar ikut bergerak.
 /// Seluruh tampilan dibuat lewat kode saat Awake di bawah Canvas (UnityEngine.UI.Text legacy), jadi hanya perlu
@@ -122,7 +122,7 @@ public class MachinePanelUI : MonoBehaviour
     /// </summary>
     public bool Open(SolarPanel target, Action repairCallback, Action onClosedCallback, string initialFeedback)
     {
-        if (target == null || !BeginOpen(Mode.Solar, string.IsNullOrEmpty(target.name) ? "Solar Panel" : target.name, onClosedCallback)) return false;
+        if (target == null || !BeginOpen(Mode.Solar, "Solar Panel", onClosedCallback)) return false;
 
         solarPanel = target;
         onRepairRequested = repairCallback;
@@ -341,28 +341,28 @@ public class MachinePanelUI : MonoBehaviour
         if (solarPanel == null) { Close(); return; }
 
         ResourceManager resources = ResourceManager.Instance;
-        bool damaged = solarPanel.IsDamaged;
+        // Semua panel berbagi satu status: rusak berarti seluruh panel berhenti menghasilkan Energy.
+        bool damaged = SolarPanel.ArrayDamaged;
 
-        if (damaged) SetStatus("RUSAK", BadColor, "  produksi Energy menurun");
+        if (damaged) SetStatus("RUSAK", BadColor, "  Energy tidak bertambah");
         else SetStatus("NORMAL", GoodColor, string.Empty);
-
-        float panelNow = solarPanel.CurrentEnergyPerSecond;
-        float panelMax = solarPanel.NormalEnergyPerSecond;
-        SetGauge(0, "Output panel ini", Fraction(panelNow, panelMax),
-            panelNow.ToString("0.0#") + " / " + panelMax.ToString("0.0#") + "/dtk", damaged ? BadColor : GoodColor);
 
         float totalNow = 0f;
         float totalMax = 0f;
-        int damagedCount = 0;
+        int panelCount = 0;
         for (int i = 0; i < allPanels.Length; i++)
         {
             if (allPanels[i] == null) continue;
             totalNow += allPanels[i].CurrentEnergyPerSecond;
             totalMax += allPanels[i].NormalEnergyPerSecond;
-            if (allPanels[i].IsDamaged) damagedCount++;
+            panelCount++;
         }
-        SetGauge(1, "Output total", Fraction(totalNow, totalMax),
-            totalNow.ToString("0.0#") + " / " + totalMax.ToString("0.0#") + "/dtk", damagedCount > 0 ? WarnColor : GoodColor);
+        SetGauge(0, "Output total", Fraction(totalNow, totalMax),
+            totalNow.ToString("0.0#") + " / " + totalMax.ToString("0.0#") + "/dtk", damaged ? BadColor : GoodColor);
+
+        int activeCount = damaged ? 0 : panelCount;
+        SetGauge(1, "Panel aktif", Fraction(activeCount, panelCount),
+            activeCount + " / " + panelCount, damaged ? BadColor : GoodColor);
 
         if (resources != null)
         {
@@ -371,31 +371,14 @@ public class MachinePanelUI : MonoBehaviour
                 Mathf.FloorToInt(energy) + " / " + Mathf.RoundToInt(resources.GetMax(ResourceType.Energy)), GoodColor);
         }
 
-        infoText.text = "Panel rusak: " + damagedCount + " dari " + allPanels.Length + "\n" +
-            "Panel rusak hanya menghasilkan sebagian kecil Energy. Perbaiki lewat minigame kabel.";
+        infoText.text = "Solar Panel rusak menghentikan seluruh produksi Energy.\n" +
+            "Perbaiki lewat minigame kabel.";
 
         primaryLabel.text = "PERBAIKI";
         primaryButton.interactable = damaged;
-        if (damaged)
-        {
-            hintText.text = "Sambungkan kabel dengan warna yang sama untuk memperbaiki panel.";
-        }
-        else if (damagedCount > 0)
-        {
-            // Panel ini normal, tombol PERBAIKI nonaktif: tunjukkan panel mana yang rusak.
-            System.Text.StringBuilder names = new System.Text.StringBuilder();
-            for (int i = 0; i < allPanels.Length; i++)
-            {
-                if (allPanels[i] == null || !allPanels[i].IsDamaged) continue;
-                if (names.Length > 0) names.Append(", ");
-                names.Append(allPanels[i].name);
-            }
-            hintText.text = "Panel ini normal. Panel yang rusak: " + names + ".";
-        }
-        else
-        {
-            hintText.text = "Panel berfungsi normal.";
-        }
+        hintText.text = damaged
+            ? "Sambungkan kabel dengan warna yang sama untuk memperbaiki Solar Panel."
+            : "Solar Panel berfungsi normal.";
     }
 
     private static float Fraction(float value, float max) => max > 0f ? Mathf.Clamp01(value / max) : 0f;

@@ -1,14 +1,14 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// Pemicu kerusakan Solar Panel: SATU kejadian acak per hari (keputusan developer 2026-11-16).
 /// Di awal setiap hari (TimeManager.OnDayStarted, dan saat game mulai) scheduler menentukan satu waktu acak
-/// di dalam hari itu. Saat waktu tersebut tercapai, satu panel yang masih normal dipilih acak lalu dirusak
-/// lewat SolarPanel.Damage(). Panel yang sudah rusak tidak dipilih lagi; bila semua panel rusak, kejadian hari itu dilewati.
+/// di dalam hari itu. Saat waktu tersebut tercapai, Solar Panel dirusak lewat SolarPanel.Damage(); semua panel
+/// berbagi satu status rusak (keputusan developer 2026-11-27), jadi Energy berhenti bertambah sampai diperbaiki.
+/// Bila Solar Panel sedang rusak, kejadian hari itu dilewati.
 /// Waktu hanya berjalan saat TimeManager tidak dijeda (tidur dan minigame kabel ikut menjeda).
 /// Pemain diberi tahu TARS: bila TARSSystem ada di scene, TARSSystem sendiri yang mengumumkan (ia memantau
-/// SolarPanel.OnDamagedChanged); bila tidak ada, scheduler memakai dialog TARS langsung seperti sebelumnya.
+/// SolarPanel.OnArrayDamagedChanged); bila tidak ada, scheduler memakai dialog TARS langsung seperti sebelumnya.
 /// Semua angka di bawah adalah USULAN, ubah lewat Inspector setelah playtest.
 /// </summary>
 public class SolarPanelDamageScheduler : MonoBehaviour
@@ -90,47 +90,31 @@ public class SolarPanelDamageScheduler : MonoBehaviour
 
     private void TriggerDamage()
     {
-        SolarPanel[] allPanels = FindObjectsByType<SolarPanel>(FindObjectsSortMode.None);
-        RepairPoint[] repairPoints = FindObjectsByType<RepairPoint>(FindObjectsSortMode.None);
-        List<SolarPanel> healthy = new List<SolarPanel>();
-        int unrepairable = 0;
-        foreach (SolarPanel candidate in allPanels)
+        if (SolarPanel.ArrayDamaged)
         {
-            if (candidate.IsDamaged) continue;
-
-            // Hanya panel yang dilayani sebuah RepairPoint yang boleh dirusak; kalau tidak, panel rusak tanpa jalan perbaikan (stuck).
-            if (!HasRepairPoint(candidate, repairPoints))
-            {
-                unrepairable++;
-                continue;
-            }
-            healthy.Add(candidate);
-        }
-
-        if (unrepairable > 0)
-            Debug.LogWarning("SolarPanelDamageScheduler: " + unrepairable + " Solar Panel tidak dilayani RepairPoint mana pun dan dilewati. Pastikan ada RepairPoint di scene.", this);
-
-        if (healthy.Count == 0)
-        {
-            Debug.Log("SolarPanelDamageScheduler: tidak ada panel normal yang bisa diperbaiki, kejadian kerusakan hari ini dilewati.");
+            Debug.Log("SolarPanelDamageScheduler: Solar Panel sudah rusak, kejadian kerusakan hari ini dilewati.");
             return;
         }
 
-        SolarPanel chosen = healthy[Random.Range(0, healthy.Count)];
-        chosen.Damage();
-        Debug.Log("SolarPanelDamageScheduler: " + chosen.name + " rusak (hari " + timeManager.CurrentDay + ").");
+        SolarPanel panel = FindFirstObjectByType<SolarPanel>();
+        if (panel == null)
+        {
+            Debug.LogWarning("SolarPanelDamageScheduler: tidak ada Solar Panel di scene, kejadian kerusakan dilewati.", this);
+            return;
+        }
+
+        // Jangan merusak bila tidak ada jalan perbaikan; kalau tidak, Energy berhenti selamanya (stuck).
+        if (FindObjectsByType<RepairPoint>(FindObjectsSortMode.None).Length == 0)
+        {
+            Debug.LogWarning("SolarPanelDamageScheduler: tidak ada RepairPoint di scene, kejadian kerusakan dilewati. Jalankan menu Mars > Setup Interactive Objects.", this);
+            return;
+        }
+
+        panel.Damage();
+        Debug.Log("SolarPanelDamageScheduler: Solar Panel rusak (hari " + timeManager.CurrentDay + ").");
 
         if (announceWithDialogue && TARSSystem.Instance == null)
-            pendingMessage = chosen.name + " mengalami gangguan. Produksi energi menurun.";
-    }
-
-    private static bool HasRepairPoint(SolarPanel panel, RepairPoint[] repairPoints)
-    {
-        foreach (RepairPoint point in repairPoints)
-        {
-            if (point != null && point.Serves(panel)) return true;
-        }
-        return false;
+            pendingMessage = "Solar Panel mengalami gangguan. Produksi energi berhenti sampai diperbaiki.";
     }
 
     // Dialog tidak ditumpuk: pesan menunggu sampai dialog lain dan minigame tertutup.

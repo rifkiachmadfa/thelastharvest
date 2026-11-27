@@ -2,21 +2,21 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Satu Solar Panel di Outdoor. Menghasilkan Energy ke ResourceManager secara otomatis.
-/// Panel rusak menghasilkan sebagian kecil saja (bukan nol, dan tidak mematikan fasilitas lain).
-/// Beberapa panel di scene saling menjumlah. Produksi ikut jeda TimeManager.IsPaused (transisi tidur).
-/// Belum ada pemicu kerusakan otomatis (belum diputuskan): pakai Damage() dari kode lain nanti atau menu
-/// konteks Debug di Inspector. Perbaikan lewat RepairPoint. Informasi ke pemain lewat TARS menunggu TARSSystem.
+/// Satu Solar Panel (tampilan) di Outdoor. SEMUA Solar Panel di scene berbagi SATU status rusak/normal
+/// (keputusan developer 2026-11-27): bila rusak, seluruh panel berhenti menambah Energy sampai diperbaiki lewat
+/// RepairPoint; bila normal, tiap panel menambah Energy dan hasilnya saling menjumlah. Jumlah objek panel di scene
+/// hanya urusan tampilan: semua panel ikut berubah sprite/warna saat status berubah.
+/// Produksi ikut jeda TimeManager.IsPaused (transisi tidur). Kerusakan dipicu SolarPanelDamageScheduler (satu kejadian
+/// per hari) atau menu konteks Debug di Inspector. Pemberitahuan ke pemain lewat TARSSystem.
 /// Angka produksi adalah USULAN.
 /// </summary>
 public class SolarPanel : MonoBehaviour
 {
     [Header("Produksi (USULAN, ubah lewat Inspector setelah playtest)")]
     [SerializeField, Min(0f)] private float normalEnergyPerSecond = 0.5f;
-    [Tooltip("Pengali produksi saat rusak (0 = mati total, 1 = tidak berpengaruh).")]
-    [SerializeField, Range(0f, 1f)] private float damagedOutputMultiplier = 0.25f;
     [Tooltip("Energy ditambahkan ke stok setiap sekian detik (agar event HUD tidak terpicu tiap frame).")]
     [SerializeField, Min(0.1f)] private float tickSeconds = 1f;
+    [Tooltip("Bila dicentang pada salah satu panel, seluruh Solar Panel mulai dalam keadaan rusak.")]
     [SerializeField] private bool startDamaged;
 
     [Header("Tampilan opsional")]
@@ -29,23 +29,44 @@ public class SolarPanel : MonoBehaviour
     private Color baseColor = Color.white;
     private float tickTimer;
 
-    /// <summary>True bila panel sedang rusak.</summary>
-    public bool IsDamaged { get; private set; }
+    /// <summary>True bila Solar Panel (seluruh susunan panel) sedang rusak.</summary>
+    public static bool ArrayDamaged { get; private set; }
+
+    /// <summary>Dipanggil sekali saat status rusak seluruh Solar Panel berubah (parameter: true bila rusak).</summary>
+    public static event Action<bool> OnArrayDamagedChanged;
+
+    /// <summary>Sama dengan ArrayDamaged: semua panel berbagi satu status.</summary>
+    public bool IsDamaged => ArrayDamaged;
 
     /// <summary>Energy per detik panel ini saat normal (dipakai MachinePanelUI untuk membandingkan).</summary>
     public float NormalEnergyPerSecond => normalEnergyPerSecond;
 
-    /// <summary>Energy per detik yang dihasilkan panel ini sekarang.</summary>
-    public float CurrentEnergyPerSecond => normalEnergyPerSecond * (IsDamaged ? damagedOutputMultiplier : 1f);
+    /// <summary>Energy per detik yang dihasilkan panel ini sekarang (0 bila rusak).</summary>
+    public float CurrentEnergyPerSecond => ArrayDamaged ? 0f : normalEnergyPerSecond;
 
-    /// <summary>Dipanggil saat status berubah (parameter: true bila rusak).</summary>
-    public event Action<bool> OnDamagedChanged;
+    // Mengatur ulang status statis saat Play Mode dimulai (aman bila Enter Play Mode tanpa domain reload).
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        ArrayDamaged = false;
+        OnArrayDamagedChanged = null;
+    }
 
     private void Awake()
     {
         if (spriteRenderer != null) baseColor = spriteRenderer.color;
-        IsDamaged = startDamaged;
+        if (startDamaged) SetArrayDamaged(true);
+    }
+
+    private void OnEnable()
+    {
+        OnArrayDamagedChanged += HandleArrayDamagedChanged;
         ApplyVisual();
+    }
+
+    private void OnDisable()
+    {
+        OnArrayDamagedChanged -= HandleArrayDamagedChanged;
     }
 
     private void Update()
@@ -63,26 +84,28 @@ public class SolarPanel : MonoBehaviour
         if (resources != null && amount > 0f) resources.Add(ResourceType.Energy, amount);
     }
 
-    /// <summary>Merusak panel. Tidak melakukan apa pun bila sudah rusak.</summary>
-    public void Damage() => SetDamaged(true);
+    /// <summary>Merusak seluruh Solar Panel. Tidak melakukan apa pun bila sudah rusak.</summary>
+    public void Damage() => SetArrayDamaged(true);
 
-    /// <summary>Memperbaiki panel. Tidak melakukan apa pun bila sudah normal.</summary>
-    public void Repair() => SetDamaged(false);
+    /// <summary>Memperbaiki seluruh Solar Panel. Tidak melakukan apa pun bila sudah normal.</summary>
+    public void Repair() => SetArrayDamaged(false);
 
-    private void SetDamaged(bool damaged)
+    /// <summary>Mengubah status rusak seluruh Solar Panel dan memberi tahu pelanggan event bila berubah.</summary>
+    public static void SetArrayDamaged(bool damaged)
     {
-        if (IsDamaged == damaged) return;
+        if (ArrayDamaged == damaged) return;
 
-        IsDamaged = damaged;
-        ApplyVisual();
-        OnDamagedChanged?.Invoke(damaged);
+        ArrayDamaged = damaged;
+        OnArrayDamagedChanged?.Invoke(damaged);
     }
+
+    private void HandleArrayDamagedChanged(bool damaged) => ApplyVisual();
 
     private void ApplyVisual()
     {
         if (spriteRenderer == null) return;
 
-        Sprite sprite = IsDamaged ? damagedSprite : normalSprite;
+        Sprite sprite = ArrayDamaged ? damagedSprite : normalSprite;
         if (sprite != null)
         {
             spriteRenderer.sprite = sprite;
@@ -91,7 +114,7 @@ public class SolarPanel : MonoBehaviour
         }
 
         // Tanpa sprite khusus: warna menjadi penanda.
-        spriteRenderer.color = IsDamaged ? baseColor * damagedTint : baseColor;
+        spriteRenderer.color = ArrayDamaged ? baseColor * damagedTint : baseColor;
     }
 
     [ContextMenu("Debug: Rusakkan panel")]

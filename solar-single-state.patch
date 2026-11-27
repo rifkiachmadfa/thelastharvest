@@ -1,0 +1,619 @@
+diff --git a/Assets/Script/Outdoor/RepairPoint.cs b/Assets/Script/Outdoor/RepairPoint.cs
+index 0b43468f..66343f17 100644
+--- a/Assets/Script/Outdoor/RepairPoint.cs
++++ b/Assets/Script/Outdoor/RepairPoint.cs
+@@ -1,22 +1,19 @@
+ using UnityEngine;
+ 
+ /// <summary>
+-/// Titik perbaikan Solar Panel di Outdoor. SATU RepairPoint melayani SEMUA Solar Panel di scene (servesAllPanels,
+-/// bawaan): panel yang dibuka adalah panel rusak pertama (urut nama lalu posisi kiri-ke-kanan); bila tidak ada yang
+-/// rusak, panel utama (field Panel) atau panel pertama. Selesai memperbaiki satu panel, panel rusak berikutnya
+-/// (bila ada) langsung ditawarkan. Matikan servesAllPanels bila ingin RepairPoint khusus satu panel. Tekan E: MachinePanelUI Solar Panel terbuka (status, output,
+-/// Energy); tombol PERBAIKI pada panel (aktif bila panel rusak) membuka minigame kabel (WiringMinigameUI), dan panel
+-/// diperbaiki (SolarPanel.Repair()) hanya setelah semua kabel tersambung. Esc membatalkan.
+-/// Tanpa MachinePanelUI di scene, E langsung membuka minigame bila panel rusak (perilaku lama, dialog bila normal).
++/// Titik perbaikan Solar Panel di Outdoor. SATU RepairPoint memperbaiki SELURUH Solar Panel: semua panel berbagi satu
++/// status rusak/normal (lihat SolarPanel), jadi tidak ada lagi perbaikan panel satu per satu.
++/// Tekan E: MachinePanelUI Solar Panel terbuka (status, output, Energy); tombol PERBAIKI (aktif bila rusak) membuka
++/// minigame kabel (WiringMinigameUI), dan Solar Panel diperbaiki (SolarPanel.Repair()) hanya setelah semua kabel
++/// tersambung. Esc membatalkan.
++/// Tanpa MachinePanelUI di scene, E langsung membuka minigame bila rusak (perilaku lama, dialog bila normal).
+ /// Bila WiringMinigameUI tidak ada di scene, perbaikan langsung berhasil (cadangan, dengan peringatan di Console).
+ /// Pasang pada objek ber-layer Interactable dengan Collider2D.
+ /// </summary>
+ public class RepairPoint : MonoBehaviour, IInteractable
+ {
+-    [Tooltip("Panel utama / cadangan. Kosong boleh bila servesAllPanels aktif (dipakai panel pertama di scene).")]
++    [Tooltip("Panel perwakilan untuk tampilan MachinePanelUI dan posisi popup. Status rusak berlaku untuk semua panel. Kosong = panel pertama di scene.")]
+     [SerializeField] private SolarPanel panel;
+-    [Tooltip("Satu RepairPoint melayani semua Solar Panel di scene. Matikan untuk melayani hanya Panel di atas.")]
+-    [SerializeField] private bool servesAllPanels = true;
+ 
+     [Header("Referensi (otomatis dicari jika kosong)")]
+     [SerializeField] private DialogueUI dialogueUI;
+@@ -26,30 +23,18 @@ public class RepairPoint : MonoBehaviour, IInteractable
+     [SerializeField, Min(0f)] private float reinteractCooldown = 0.3f;
+ 
+     private float nextInteractTime;
+-    private SolarPanel[] allPanels = new SolarPanel[0];
+     private SolarPanel target;
+ 
+-    /// <summary>Panel utama yang diisi di Inspector (bisa kosong).</summary>
++    /// <summary>Panel perwakilan yang diisi di Inspector (bisa kosong).</summary>
+     public SolarPanel Panel => panel;
+ 
+-    /// <summary>True bila RepairPoint ini dapat memperbaiki panel tersebut.</summary>
+-    public bool Serves(SolarPanel candidate)
+-    {
+-        if (candidate == null) return false;
+-        return servesAllPanels || candidate == panel;
+-    }
+-
+     public string InteractionPrompt
+     {
+         get
+         {
+-            SolarPanel current = PickTarget();
+-            int damagedCount = CountDamaged();
+-            bool damaged = current != null && current.IsDamaged;
+-            string label = current != null && !string.IsNullOrEmpty(current.name) ? current.name : "Solar Panel";
+-            string suffix = damagedCount > 0 ? " (" + damagedCount + " rusak)" : string.Empty;
+-            if (panelUI != null) return damaged ? "Periksa " + label + " (RUSAK)" + suffix : "Periksa Solar Panel" + suffix;
+-            return damaged ? "Perbaiki " + label + suffix : "Periksa Solar Panel" + suffix;
++            bool damaged = SolarPanel.ArrayDamaged;
++            if (panelUI != null) return damaged ? "Periksa Solar Panel (RUSAK)" : "Periksa Solar Panel";
++            return damaged ? "Perbaiki Solar Panel" : "Periksa Solar Panel";
+         }
+     }
+ 
+@@ -58,87 +43,52 @@ public class RepairPoint : MonoBehaviour, IInteractable
+         if (dialogueUI == null) dialogueUI = FindFirstObjectByType<DialogueUI>();
+         if (minigame == null) minigame = FindFirstObjectByType<WiringMinigameUI>();
+         if (panelUI == null) panelUI = FindFirstObjectByType<MachinePanelUI>();
+-        allPanels = FindObjectsByType<SolarPanel>(FindObjectsSortMode.None);
+-        System.Array.Sort(allPanels, ComparePanels);
++        if (panel == null) panel = FindFirstObjectByType<SolarPanel>();
+ 
+         if (minigame == null)
+             Debug.LogWarning("RepairPoint: WiringMinigameUI tidak ditemukan; perbaikan akan langsung berhasil. Jalankan menu Mars > Setup Panel Damage and Wiring Minigame.", this);
+ 
+-        if (PickTarget() == null)
+-            Debug.LogError("RepairPoint: tidak ada Solar Panel yang dilayani (isi Panel di Inspector atau pastikan ada SolarPanel di scene).", this);
++        if (panel == null)
++            Debug.LogError("RepairPoint: tidak ada Solar Panel di scene (isi Panel di Inspector atau tambahkan SolarPanel).", this);
+     }
+ 
+     public bool CanInteract(GameObject interactor)
+     {
+-        if (PickTarget() == null || Time.time < nextInteractTime || MachinePanelUI.IsOpen) return false;
++        if (panel == null || Time.time < nextInteractTime || MachinePanelUI.IsOpen) return false;
+         if (minigame != null && minigame.IsOpen) return false;
+         return dialogueUI == null || !dialogueUI.IsOpen;
+     }
+ 
+     public void Interact(GameObject interactor)
+     {
+-        target = PickTarget();
++        target = panel;
+         if (target == null) return;
+ 
+         if (panelUI != null && panelUI.Open(target, BeginRepair, OnPanelClosed, null)) return;
+ 
+-        if (!target.IsDamaged)
++        if (!SolarPanel.ArrayDamaged)
+         {
+-            ShowMessage("Solar Panel berfungsi normal. Produksi: " +
+-                target.CurrentEnergyPerSecond.ToString("0.0") + " Energy per detik.");
++            ShowMessage("Solar Panel berfungsi normal. Produksi total: " +
++                TotalEnergyPerSecond().ToString("0.0") + " Energy per detik.");
+             return;
+         }
+ 
+         BeginRepair();
+     }
+ 
+-    // Panel yang ditangani: rusak pertama; bila tidak ada, panel utama atau panel pertama di scene.
+-    private SolarPanel PickTarget()
+-    {
+-        if (!servesAllPanels) return panel;
+-
+-        SolarPanel firstDamaged = null;
+-        foreach (SolarPanel candidate in allPanels)
+-        {
+-            if (candidate != null && candidate.IsDamaged) { firstDamaged = candidate; break; } // allPanels sudah terurut
+-        }
+-        if (firstDamaged != null) return firstDamaged;
+-
+-        if (panel != null) return panel;
+-        foreach (SolarPanel candidate in allPanels)
+-        {
+-            if (candidate != null) return candidate;
+-        }
+-        return null;
+-    }
+-
+-    private int CountDamaged()
+-    {
+-        if (!servesAllPanels) return panel != null && panel.IsDamaged ? 1 : 0;
+-
+-        int count = 0;
+-        foreach (SolarPanel candidate in allPanels)
+-        {
+-            if (candidate != null && candidate.IsDamaged) count++;
+-        }
+-        return count;
+-    }
+-
+-    private static int ComparePanels(SolarPanel a, SolarPanel b)
++    // Jumlah produksi seluruh Solar Panel saat ini (dipakai hanya untuk pesan dialog tanpa MachinePanelUI).
++    private static float TotalEnergyPerSecond()
+     {
+-        if (a == b) return 0;
+-        if (a == null) return 1;
+-        if (b == null) return -1;
+-
+-        int byName = string.CompareOrdinal(a.name, b.name);
+-        if (byName != 0) return byName;
+-        return a.transform.position.x.CompareTo(b.transform.position.x);
++        float total = 0f;
++        foreach (SolarPanel candidate in FindObjectsByType<SolarPanel>(FindObjectsSortMode.None))
++            total += candidate.CurrentEnergyPerSecond;
++        return total;
+     }
+ 
+     // Membuka minigame kabel (dipanggil langsung atau lewat tombol PERBAIKI di MachinePanelUI).
+     private void BeginRepair()
+     {
+-        if (target == null || !target.IsDamaged) return;
++        if (target == null || !SolarPanel.ArrayDamaged) return;
+ 
+         if (minigame == null)
+         {
+@@ -146,7 +96,7 @@ public class RepairPoint : MonoBehaviour, IInteractable
+             return;
+         }
+ 
+-        minigame.Open(target.name, OnRepairSucceeded, OnRepairCancelled);
++        minigame.Open("Solar Panel", OnRepairSucceeded, OnRepairCancelled);
+     }
+ 
+     private void OnPanelClosed()
+@@ -159,17 +109,10 @@ public class RepairPoint : MonoBehaviour, IInteractable
+         SolarPanel repaired = target;
+         if (repaired == null) return;
+ 
+-        repaired.Repair();
+-        FloatingPopupManager.Show(FloatingPopupManager.AnchorAbove(repaired), PopupIcon.Repair, "Panel diperbaiki");
+-
+-        // Tawarkan panel rusak berikutnya (bila ada); kalau tidak, tampilkan panel yang baru diperbaiki.
+-        SolarPanel next = PickTarget();
+-        if (next != null && next.IsDamaged) target = next; else target = repaired;
++        repaired.Repair(); // memperbaiki seluruh Solar Panel sekaligus
++        FloatingPopupManager.Show(FloatingPopupManager.AnchorAbove(repaired), PopupIcon.Repair, "Solar Panel diperbaiki");
+ 
+-        int remaining = CountDamaged();
+-        string note = remaining > 0
+-            ? "Panel diperbaiki. Masih ada " + remaining + " panel rusak; tekan PERBAIKI untuk panel berikutnya."
+-            : "Panel diperbaiki. Produksi Energy kembali normal.";
++        const string note = "Solar Panel diperbaiki. Produksi Energy kembali normal.";
+ 
+         // Dengan panel mesin: kembali ke panel agar hasilnya (status, output) terlihat.
+         if (panelUI != null && panelUI.Open(target, BeginRepair, OnPanelClosed, note)) return;
+diff --git a/Assets/Script/Outdoor/SolarPanel.cs b/Assets/Script/Outdoor/SolarPanel.cs
+index 440b8501..7786c7f6 100644
+--- a/Assets/Script/Outdoor/SolarPanel.cs
++++ b/Assets/Script/Outdoor/SolarPanel.cs
+@@ -2,21 +2,21 @@ using System;
+ using UnityEngine;
+ 
+ /// <summary>
+-/// Satu Solar Panel di Outdoor. Menghasilkan Energy ke ResourceManager secara otomatis.
+-/// Panel rusak menghasilkan sebagian kecil saja (bukan nol, dan tidak mematikan fasilitas lain).
+-/// Beberapa panel di scene saling menjumlah. Produksi ikut jeda TimeManager.IsPaused (transisi tidur).
+-/// Belum ada pemicu kerusakan otomatis (belum diputuskan): pakai Damage() dari kode lain nanti atau menu
+-/// konteks Debug di Inspector. Perbaikan lewat RepairPoint. Informasi ke pemain lewat TARS menunggu TARSSystem.
++/// Satu Solar Panel (tampilan) di Outdoor. SEMUA Solar Panel di scene berbagi SATU status rusak/normal
++/// (keputusan developer 2026-11-27): bila rusak, seluruh panel berhenti menambah Energy sampai diperbaiki lewat
++/// RepairPoint; bila normal, tiap panel menambah Energy dan hasilnya saling menjumlah. Jumlah objek panel di scene
++/// hanya urusan tampilan: semua panel ikut berubah sprite/warna saat status berubah.
++/// Produksi ikut jeda TimeManager.IsPaused (transisi tidur). Kerusakan dipicu SolarPanelDamageScheduler (satu kejadian
++/// per hari) atau menu konteks Debug di Inspector. Pemberitahuan ke pemain lewat TARSSystem.
+ /// Angka produksi adalah USULAN.
+ /// </summary>
+ public class SolarPanel : MonoBehaviour
+ {
+     [Header("Produksi (USULAN, ubah lewat Inspector setelah playtest)")]
+     [SerializeField, Min(0f)] private float normalEnergyPerSecond = 0.5f;
+-    [Tooltip("Pengali produksi saat rusak (0 = mati total, 1 = tidak berpengaruh).")]
+-    [SerializeField, Range(0f, 1f)] private float damagedOutputMultiplier = 0.25f;
+     [Tooltip("Energy ditambahkan ke stok setiap sekian detik (agar event HUD tidak terpicu tiap frame).")]
+     [SerializeField, Min(0.1f)] private float tickSeconds = 1f;
++    [Tooltip("Bila dicentang pada salah satu panel, seluruh Solar Panel mulai dalam keadaan rusak.")]
+     [SerializeField] private bool startDamaged;
+ 
+     [Header("Tampilan opsional")]
+@@ -29,25 +29,46 @@ public class SolarPanel : MonoBehaviour
+     private Color baseColor = Color.white;
+     private float tickTimer;
+ 
+-    /// <summary>True bila panel sedang rusak.</summary>
+-    public bool IsDamaged { get; private set; }
++    /// <summary>True bila Solar Panel (seluruh susunan panel) sedang rusak.</summary>
++    public static bool ArrayDamaged { get; private set; }
++
++    /// <summary>Dipanggil sekali saat status rusak seluruh Solar Panel berubah (parameter: true bila rusak).</summary>
++    public static event Action<bool> OnArrayDamagedChanged;
++
++    /// <summary>Sama dengan ArrayDamaged: semua panel berbagi satu status.</summary>
++    public bool IsDamaged => ArrayDamaged;
+ 
+     /// <summary>Energy per detik panel ini saat normal (dipakai MachinePanelUI untuk membandingkan).</summary>
+     public float NormalEnergyPerSecond => normalEnergyPerSecond;
+ 
+-    /// <summary>Energy per detik yang dihasilkan panel ini sekarang.</summary>
+-    public float CurrentEnergyPerSecond => normalEnergyPerSecond * (IsDamaged ? damagedOutputMultiplier : 1f);
++    /// <summary>Energy per detik yang dihasilkan panel ini sekarang (0 bila rusak).</summary>
++    public float CurrentEnergyPerSecond => ArrayDamaged ? 0f : normalEnergyPerSecond;
+ 
+-    /// <summary>Dipanggil saat status berubah (parameter: true bila rusak).</summary>
+-    public event Action<bool> OnDamagedChanged;
++    // Mengatur ulang status statis saat Play Mode dimulai (aman bila Enter Play Mode tanpa domain reload).
++    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
++    private static void ResetStatics()
++    {
++        ArrayDamaged = false;
++        OnArrayDamagedChanged = null;
++    }
+ 
+     private void Awake()
+     {
+         if (spriteRenderer != null) baseColor = spriteRenderer.color;
+-        IsDamaged = startDamaged;
++        if (startDamaged) SetArrayDamaged(true);
++    }
++
++    private void OnEnable()
++    {
++        OnArrayDamagedChanged += HandleArrayDamagedChanged;
+         ApplyVisual();
+     }
+ 
++    private void OnDisable()
++    {
++        OnArrayDamagedChanged -= HandleArrayDamagedChanged;
++    }
++
+     private void Update()
+     {
+         TimeManager time = TimeManager.Instance;
+@@ -63,26 +84,28 @@ public class SolarPanel : MonoBehaviour
+         if (resources != null && amount > 0f) resources.Add(ResourceType.Energy, amount);
+     }
+ 
+-    /// <summary>Merusak panel. Tidak melakukan apa pun bila sudah rusak.</summary>
+-    public void Damage() => SetDamaged(true);
++    /// <summary>Merusak seluruh Solar Panel. Tidak melakukan apa pun bila sudah rusak.</summary>
++    public void Damage() => SetArrayDamaged(true);
+ 
+-    /// <summary>Memperbaiki panel. Tidak melakukan apa pun bila sudah normal.</summary>
+-    public void Repair() => SetDamaged(false);
++    /// <summary>Memperbaiki seluruh Solar Panel. Tidak melakukan apa pun bila sudah normal.</summary>
++    public void Repair() => SetArrayDamaged(false);
+ 
+-    private void SetDamaged(bool damaged)
++    /// <summary>Mengubah status rusak seluruh Solar Panel dan memberi tahu pelanggan event bila berubah.</summary>
++    public static void SetArrayDamaged(bool damaged)
+     {
+-        if (IsDamaged == damaged) return;
++        if (ArrayDamaged == damaged) return;
+ 
+-        IsDamaged = damaged;
+-        ApplyVisual();
+-        OnDamagedChanged?.Invoke(damaged);
++        ArrayDamaged = damaged;
++        OnArrayDamagedChanged?.Invoke(damaged);
+     }
+ 
++    private void HandleArrayDamagedChanged(bool damaged) => ApplyVisual();
++
+     private void ApplyVisual()
+     {
+         if (spriteRenderer == null) return;
+ 
+-        Sprite sprite = IsDamaged ? damagedSprite : normalSprite;
++        Sprite sprite = ArrayDamaged ? damagedSprite : normalSprite;
+         if (sprite != null)
+         {
+             spriteRenderer.sprite = sprite;
+@@ -91,7 +114,7 @@ public class SolarPanel : MonoBehaviour
+         }
+ 
+         // Tanpa sprite khusus: warna menjadi penanda.
+-        spriteRenderer.color = IsDamaged ? baseColor * damagedTint : baseColor;
++        spriteRenderer.color = ArrayDamaged ? baseColor * damagedTint : baseColor;
+     }
+ 
+     [ContextMenu("Debug: Rusakkan panel")]
+diff --git a/Assets/Script/Outdoor/SolarPanelDamageScheduler.cs b/Assets/Script/Outdoor/SolarPanelDamageScheduler.cs
+index 7b77bbed..12366dbf 100644
+--- a/Assets/Script/Outdoor/SolarPanelDamageScheduler.cs
++++ b/Assets/Script/Outdoor/SolarPanelDamageScheduler.cs
+@@ -1,14 +1,14 @@
+-using System.Collections.Generic;
+ using UnityEngine;
+ 
+ /// <summary>
+ /// Pemicu kerusakan Solar Panel: SATU kejadian acak per hari (keputusan developer 2026-11-16).
+ /// Di awal setiap hari (TimeManager.OnDayStarted, dan saat game mulai) scheduler menentukan satu waktu acak
+-/// di dalam hari itu. Saat waktu tersebut tercapai, satu panel yang masih normal dipilih acak lalu dirusak
+-/// lewat SolarPanel.Damage(). Panel yang sudah rusak tidak dipilih lagi; bila semua panel rusak, kejadian hari itu dilewati.
++/// di dalam hari itu. Saat waktu tersebut tercapai, Solar Panel dirusak lewat SolarPanel.Damage(); semua panel
++/// berbagi satu status rusak (keputusan developer 2026-11-27), jadi Energy berhenti bertambah sampai diperbaiki.
++/// Bila Solar Panel sedang rusak, kejadian hari itu dilewati.
+ /// Waktu hanya berjalan saat TimeManager tidak dijeda (tidur dan minigame kabel ikut menjeda).
+ /// Pemain diberi tahu TARS: bila TARSSystem ada di scene, TARSSystem sendiri yang mengumumkan (ia memantau
+-/// SolarPanel.OnDamagedChanged); bila tidak ada, scheduler memakai dialog TARS langsung seperti sebelumnya.
++/// SolarPanel.OnArrayDamagedChanged); bila tidak ada, scheduler memakai dialog TARS langsung seperti sebelumnya.
+ /// Semua angka di bawah adalah USULAN, ubah lewat Inspector setelah playtest.
+ /// </summary>
+ public class SolarPanelDamageScheduler : MonoBehaviour
+@@ -90,47 +90,31 @@ public class SolarPanelDamageScheduler : MonoBehaviour
+ 
+     private void TriggerDamage()
+     {
+-        SolarPanel[] allPanels = FindObjectsByType<SolarPanel>(FindObjectsSortMode.None);
+-        RepairPoint[] repairPoints = FindObjectsByType<RepairPoint>(FindObjectsSortMode.None);
+-        List<SolarPanel> healthy = new List<SolarPanel>();
+-        int unrepairable = 0;
+-        foreach (SolarPanel candidate in allPanels)
++        if (SolarPanel.ArrayDamaged)
+         {
+-            if (candidate.IsDamaged) continue;
+-
+-            // Hanya panel yang dilayani sebuah RepairPoint yang boleh dirusak; kalau tidak, panel rusak tanpa jalan perbaikan (stuck).
+-            if (!HasRepairPoint(candidate, repairPoints))
+-            {
+-                unrepairable++;
+-                continue;
+-            }
+-            healthy.Add(candidate);
++            Debug.Log("SolarPanelDamageScheduler: Solar Panel sudah rusak, kejadian kerusakan hari ini dilewati.");
++            return;
+         }
+ 
+-        if (unrepairable > 0)
+-            Debug.LogWarning("SolarPanelDamageScheduler: " + unrepairable + " Solar Panel tidak dilayani RepairPoint mana pun dan dilewati. Pastikan ada RepairPoint di scene.", this);
++        SolarPanel panel = FindFirstObjectByType<SolarPanel>();
++        if (panel == null)
++        {
++            Debug.LogWarning("SolarPanelDamageScheduler: tidak ada Solar Panel di scene, kejadian kerusakan dilewati.", this);
++            return;
++        }
+ 
+-        if (healthy.Count == 0)
++        // Jangan merusak bila tidak ada jalan perbaikan; kalau tidak, Energy berhenti selamanya (stuck).
++        if (FindObjectsByType<RepairPoint>(FindObjectsSortMode.None).Length == 0)
+         {
+-            Debug.Log("SolarPanelDamageScheduler: tidak ada panel normal yang bisa diperbaiki, kejadian kerusakan hari ini dilewati.");
++            Debug.LogWarning("SolarPanelDamageScheduler: tidak ada RepairPoint di scene, kejadian kerusakan dilewati. Jalankan menu Mars > Setup Interactive Objects.", this);
+             return;
+         }
+ 
+-        SolarPanel chosen = healthy[Random.Range(0, healthy.Count)];
+-        chosen.Damage();
+-        Debug.Log("SolarPanelDamageScheduler: " + chosen.name + " rusak (hari " + timeManager.CurrentDay + ").");
++        panel.Damage();
++        Debug.Log("SolarPanelDamageScheduler: Solar Panel rusak (hari " + timeManager.CurrentDay + ").");
+ 
+         if (announceWithDialogue && TARSSystem.Instance == null)
+-            pendingMessage = chosen.name + " mengalami gangguan. Produksi energi menurun.";
+-    }
+-
+-    private static bool HasRepairPoint(SolarPanel panel, RepairPoint[] repairPoints)
+-    {
+-        foreach (RepairPoint point in repairPoints)
+-        {
+-            if (point != null && point.Serves(panel)) return true;
+-        }
+-        return false;
++            pendingMessage = "Solar Panel mengalami gangguan. Produksi energi berhenti sampai diperbaiki.";
+     }
+ 
+     // Dialog tidak ditumpuk: pesan menunggu sampai dialog lain dan minigame tertutup.
+diff --git a/Assets/Script/TARS/TARSSystem.cs b/Assets/Script/TARS/TARSSystem.cs
+index 0491d439..c4ba0d4c 100644
+--- a/Assets/Script/TARS/TARSSystem.cs
++++ b/Assets/Script/TARS/TARSSystem.cs
+@@ -87,7 +87,6 @@ public class TARSSystem : MonoBehaviour
+ 
+     private readonly List<Message> pending = new List<Message>();
+     private readonly Dictionary<string, float> nextAllowedByKey = new Dictionary<string, float>();
+-    private readonly Dictionary<SolarPanel, Action<bool>> panelHandlers = new Dictionary<SolarPanel, Action<bool>>();
+     private readonly int[] announcedLevel = new int[ResourceCount];
+ 
+     private ResourceManager resources;
+@@ -145,8 +144,9 @@ public class TARSSystem : MonoBehaviour
+             if (announceDayAtStart) AnnounceDayStart(time.CurrentDay);
+         }
+ 
+-        foreach (SolarPanel panel in FindObjectsByType<SolarPanel>(FindObjectsSortMode.None))
+-            WatchPanel(panel);
++        // Semua Solar Panel berbagi satu status rusak, jadi cukup satu langganan.
++        SolarPanel.OnArrayDamagedChanged += HandleSolarDamaged;
++        if (SolarPanel.ArrayDamaged) HandleSolarDamaged(true);
+     }
+ 
+     private void OnDestroy()
+@@ -161,11 +161,7 @@ public class TARSSystem : MonoBehaviour
+             time.OnDayTimeEnded -= HandleDayTimeEnded;
+         }
+ 
+-        foreach (KeyValuePair<SolarPanel, Action<bool>> pair in panelHandlers)
+-        {
+-            if (pair.Key != null) pair.Key.OnDamagedChanged -= pair.Value;
+-        }
+-        panelHandlers.Clear();
++        SolarPanel.OnArrayDamagedChanged -= HandleSolarDamaged;
+     }
+ 
+     private void Update()
+@@ -406,29 +402,18 @@ public class TARSSystem : MonoBehaviour
+ 
+     // ---------- Solar Panel ----------
+ 
+-    private void WatchPanel(SolarPanel panel)
+-    {
+-        if (panel == null || panelHandlers.ContainsKey(panel)) return;
+-
+-        Action<bool> handler = damaged => HandlePanelDamaged(panel, damaged);
+-        panelHandlers[panel] = handler;
+-        panel.OnDamagedChanged += handler;
+-
+-        if (panel.IsDamaged) HandlePanelDamaged(panel, true);
+-    }
+-
+-    private void HandlePanelDamaged(SolarPanel panel, bool damaged)
++    private void HandleSolarDamaged(bool damaged)
+     {
+-        if (!damaged || panel == null) return;
++        if (!damaged) return;
+ 
+-        // Kunci unik per objek panel. GetInstanceID() sudah obsolete (error) di Unity 6000.6.
+-        Announce("panel:" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(panel), Priority.Warning,
++        // Satu kunci untuk seluruh Solar Panel (awalan "panel:" dipakai ProcessQueue agar pesan tidak kedaluwarsa).
++        Announce("panel:solar", Priority.Warning,
+             () => new[]
+             {
+-                panel.name + " mengalami gangguan. Produksi energi menurun. " +
+-                "Panel dapat diperbaiki di Repair Point outdoor."
++                "Solar Panel mengalami gangguan. Produksi energi berhenti sampai diperbaiki. " +
++                "Solar Panel dapat diperbaiki di Repair Point outdoor."
+             },
+-            () => panel != null && panel.IsDamaged);
++            () => SolarPanel.ArrayDamaged);
+     }
+ 
+     // ---------- Hari ----------
+@@ -541,17 +526,13 @@ public class TARSSystem : MonoBehaviour
+         }
+         else
+         {
+-            int damaged = 0;
+             float energyPerSecond = 0f;
+-            foreach (SolarPanel panel in panels)
+-            {
+-                if (panel.IsDamaged) damaged++;
+-                energyPerSecond += panel.CurrentEnergyPerSecond;
+-            }
++            foreach (SolarPanel panel in panels) energyPerSecond += panel.CurrentEnergyPerSecond;
+ 
+-            sb.Append("Solar Panel: " + (panels.Length - damaged) + " normal, " + damaged + " rusak dari " +
+-                      panels.Length + ". Produksi Energy sekitar " + energyPerSecond.ToString("0.0") + " per detik. ");
+-            if (damaged > 0) sb.Append("Panel rusak diperbaiki di Repair Point outdoor. ");
++            if (SolarPanel.ArrayDamaged)
++                sb.Append("Solar Panel: RUSAK, produksi Energy berhenti. Diperbaiki di Repair Point outdoor. ");
++            else
++                sb.Append("Solar Panel: normal. Produksi Energy sekitar " + energyPerSecond.ToString("0.0") + " per detik. ");
+         }
+ 
+         foreach (WaterPurifier purifier in FindObjectsByType<WaterPurifier>(FindObjectsSortMode.None))
+diff --git a/Assets/Script/UI/MachinePanelUI.cs b/Assets/Script/UI/MachinePanelUI.cs
+index 5ed15c55..70a2130c 100644
+--- a/Assets/Script/UI/MachinePanelUI.cs
++++ b/Assets/Script/UI/MachinePanelUI.cs
+@@ -6,7 +6,7 @@ using UnityEngine.UI;
+ /// <summary>
+ /// Panel kontrol mesin dengan tampilan sendiri (bukan dialog TARS): Water Purifier (tombol PROSES, bar proses,
+ /// Energy, tangki Water), Oxygen Generator (tombol NYALAKAN/MATIKAN, status, oksigen habitat, Water, Energy) dan
+-/// Solar Panel (status normal/rusak, output panel, output total, Energy, tombol PERBAIKI yang membuka minigame kabel).
++/// Solar Panel (satu status normal/rusak untuk semua panel, output total, Energy, tombol PERBAIKI yang membuka minigame kabel).
+ /// Tutup dengan tombol Tutup atau Esc. Selama terbuka, gerakan Player dikunci (nilai sebelumnya dipulihkan saat
+ /// ditutup); waktu hari dan mesin TETAP berjalan (sama seperti StorageUI), jadi bar ikut bergerak.
+ /// Seluruh tampilan dibuat lewat kode saat Awake di bawah Canvas (UnityEngine.UI.Text legacy), jadi hanya perlu
+@@ -122,7 +122,7 @@ public class MachinePanelUI : MonoBehaviour
+     /// </summary>
+     public bool Open(SolarPanel target, Action repairCallback, Action onClosedCallback, string initialFeedback)
+     {
+-        if (target == null || !BeginOpen(Mode.Solar, string.IsNullOrEmpty(target.name) ? "Solar Panel" : target.name, onClosedCallback)) return false;
++        if (target == null || !BeginOpen(Mode.Solar, "Solar Panel", onClosedCallback)) return false;
+ 
+         solarPanel = target;
+         onRepairRequested = repairCallback;
+@@ -341,28 +341,28 @@ public class MachinePanelUI : MonoBehaviour
+         if (solarPanel == null) { Close(); return; }
+ 
+         ResourceManager resources = ResourceManager.Instance;
+-        bool damaged = solarPanel.IsDamaged;
++        // Semua panel berbagi satu status: rusak berarti seluruh panel berhenti menghasilkan Energy.
++        bool damaged = SolarPanel.ArrayDamaged;
+ 
+-        if (damaged) SetStatus("RUSAK", BadColor, "  produksi Energy menurun");
++        if (damaged) SetStatus("RUSAK", BadColor, "  Energy tidak bertambah");
+         else SetStatus("NORMAL", GoodColor, string.Empty);
+ 
+-        float panelNow = solarPanel.CurrentEnergyPerSecond;
+-        float panelMax = solarPanel.NormalEnergyPerSecond;
+-        SetGauge(0, "Output panel ini", Fraction(panelNow, panelMax),
+-            panelNow.ToString("0.0#") + " / " + panelMax.ToString("0.0#") + "/dtk", damaged ? BadColor : GoodColor);
+-
+         float totalNow = 0f;
+         float totalMax = 0f;
+-        int damagedCount = 0;
++        int panelCount = 0;
+         for (int i = 0; i < allPanels.Length; i++)
+         {
+             if (allPanels[i] == null) continue;
+             totalNow += allPanels[i].CurrentEnergyPerSecond;
+             totalMax += allPanels[i].NormalEnergyPerSecond;
+-            if (allPanels[i].IsDamaged) damagedCount++;
++            panelCount++;
+         }
+-        SetGauge(1, "Output total", Fraction(totalNow, totalMax),
+-            totalNow.ToString("0.0#") + " / " + totalMax.ToString("0.0#") + "/dtk", damagedCount > 0 ? WarnColor : GoodColor);
++        SetGauge(0, "Output total", Fraction(totalNow, totalMax),
++            totalNow.ToString("0.0#") + " / " + totalMax.ToString("0.0#") + "/dtk", damaged ? BadColor : GoodColor);
++
++        int activeCount = damaged ? 0 : panelCount;
++        SetGauge(1, "Panel aktif", Fraction(activeCount, panelCount),
++            activeCount + " / " + panelCount, damaged ? BadColor : GoodColor);
+ 
+         if (resources != null)
+         {
+@@ -371,31 +371,14 @@ public class MachinePanelUI : MonoBehaviour
+                 Mathf.FloorToInt(energy) + " / " + Mathf.RoundToInt(resources.GetMax(ResourceType.Energy)), GoodColor);
+         }
+ 
+-        infoText.text = "Panel rusak: " + damagedCount + " dari " + allPanels.Length + "\n" +
+-            "Panel rusak hanya menghasilkan sebagian kecil Energy. Perbaiki lewat minigame kabel.";
++        infoText.text = "Solar Panel rusak menghentikan seluruh produksi Energy.\n" +
++            "Perbaiki lewat minigame kabel.";
+ 
+         primaryLabel.text = "PERBAIKI";
+         primaryButton.interactable = damaged;
+-        if (damaged)
+-        {
+-            hintText.text = "Sambungkan kabel dengan warna yang sama untuk memperbaiki panel.";
+-        }
+-        else if (damagedCount > 0)
+-        {
+-            // Panel ini normal, tombol PERBAIKI nonaktif: tunjukkan panel mana yang rusak.
+-            System.Text.StringBuilder names = new System.Text.StringBuilder();
+-            for (int i = 0; i < allPanels.Length; i++)
+-            {
+-                if (allPanels[i] == null || !allPanels[i].IsDamaged) continue;
+-                if (names.Length > 0) names.Append(", ");
+-                names.Append(allPanels[i].name);
+-            }
+-            hintText.text = "Panel ini normal. Panel yang rusak: " + names + ".";
+-        }
+-        else
+-        {
+-            hintText.text = "Panel berfungsi normal.";
+-        }
++        hintText.text = damaged
++            ? "Sambungkan kabel dengan warna yang sama untuk memperbaiki Solar Panel."
++            : "Solar Panel berfungsi normal.";
+     }
+ 
+     private static float Fraction(float value, float max) => max > 0f ? Mathf.Clamp01(value / max) : 0f;
