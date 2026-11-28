@@ -359,3 +359,9 @@ Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan me
 - [ ] (BARU, gaya terakota) Kartu hanya memakai warna terakota dan cokelat gelap (tanpa cyan/amber/merah); kotak portrait TARS di kiri menampilkan sprite TARS tidak buram (pixel art tajam); tab "TARS | PANDUAN" menempel di tepi atas dan tidak menimpa timer.
 - [ ] Teks gelap terbaca jelas di atas kotak terakota; kotak TUJUAN SEKARANG (lebih gelap) terbaca dengan teks krem.
 - [ ] Bila `downFrames` TARS kosong: kotak portrait tampil polos tanpa error.
+
+## Pintu otomatis (2026-11-28)
+- [ ] Pemain mendekat: pintu berganti pintu1 -> pintu2 -> pintu3 berurutan dan pemain bisa lewat.
+- [ ] Pemain menjauh dari sensor: pintu menutup pintu3 -> pintu2 -> pintu1; collider penghalang aktif lagi saat tertutup penuh.
+- [ ] Masuk dan keluar sensor cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat.
+- [ ] Tidak ada warning merah di Console (sensor Is Trigger, Frames terisi 3 sprite, Door Renderer terisi).

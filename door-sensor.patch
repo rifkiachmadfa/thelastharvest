@@ -1,0 +1,174 @@
+diff --git a/AI_CONTEXT/05_SCENES_ASSETS.md b/AI_CONTEXT/05_SCENES_ASSETS.md
+index fb7629a1..86af387b 100644
+--- a/AI_CONTEXT/05_SCENES_ASSETS.md
++++ b/AI_CONTEXT/05_SCENES_ASSETS.md
+@@ -59,6 +59,7 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan
+ | `Assets/Script/Survival/HungerSystem.cs` | Kenyang pemain (0-100), berkurang selama gameplay, `Feed()` dipanggil InventorySystem saat makan kentang, event `OnSatietyChanged`, `OnStarvationFailure`. Dipasang pada GameObject `HungerSystem` |
+ | `Assets/Script/Survival/HealthSystem.cs` | HP pemain (0-100). Berkurang tiap `damageInterval` (2 dtk) sebesar `damageAmount` (3) selama kenyang 0; ikut `TimeManager.IsPaused`; event `OnHealthChanged`, `OnDied` (hanya log). Dipasang pada GameObject `HealthSystem` lewat menu (2026-11-27, belum dites) |
+ | `Assets/Script/Survival/HungerReminder.cs` | Pesan TARS (teks tetap) saat kenyang melewati 30%, 10%, 0; lewat antrean `TARSSystem` bila ada, dialog langsung bila tidak. Dipasang pada GameObject `HungerSystem` oleh menu setup |
++| `Assets/Script/Door/DoorSensor.cs` | Pintu otomatis (2026-11-28, belum dites): trigger sensor pada anak `Sensor`; pemain masuk -> sprite `frames` berganti berurutan sampai terbuka, keluar -> mundur sampai tertutup; `blockingCollider` opsional aktif hanya saat tertutup. Dikenali lewat `PlayerMovement`. Susunan scene: `Door` (SpriteRenderer) > `Blocker` (BoxCollider2D solid) + `Sensor` (BoxCollider2D Is Trigger + DoorSensor) [Dev: dibuat manual, belum di-commit]. Sprite `primary_pintu1-3` belum ada di repo [Repo] |
+ | `Assets/Script/Station/FoodStorage.cs` | Storage di Control Room (IInteractable "Buka storage"): membuka `StorageUI`. Nama class lama dipertahankan. Layer `Interactable`, Collider2D Is Trigger |
+ | `Assets/Script/Inventory/ItemType.cs` | Enum item tas: Potato (1), Ice (2), Seed (3) |
+ | `Assets/Script/Inventory/InventorySystem.cs` | Tas pemain (kentang 10, es 10, bibit 5), storage es dan bibit, pilihan slot (tombol 1-3), aksi bawaan (makan). Dipasang pada GameObject `InventorySystem` |
+diff --git a/AI_CONTEXT/06_PROJECT_STATUS.md b/AI_CONTEXT/06_PROJECT_STATUS.md
+index 5fa75235..f1011e04 100644
+--- a/AI_CONTEXT/06_PROJECT_STATUS.md
++++ b/AI_CONTEXT/06_PROJECT_STATUS.md
+@@ -42,6 +42,7 @@ Fondasi pemain dan NPC. Setara sekitar hari produksi 1–2 dari jadwal 15 hari:
+ | Tutorial Day 1 | Script dibuat 2026-11-17 (belum dites) | [Repo setelah patch] `Assets/Script/Tutorial/{TutorialManager,TutorialStepId,TutorialStepData,TutorialGuideUI}.cs`, `Assets/Editor/MarsTutorialSetup.cs`, event `TarsWanderer.OnPlayerTalked`. 8 langkah dengan syarat USULAN (dikunci, urutan bebas; langkah RemoveSuit ditambah 2026-11-17), arahan TARS PLACEHOLDER, status selesai di `PlayerPrefs`, lewati dengan Tab, garis arah UI ke tujuan tiap langkah. Belum dikompilasi/dites di Unity [?] |
+ | Popup mengambang ikon + teks (Es +1, Kentang +2, Water -2, Oxygen +10, makan) | Script dibuat 2026-11-17 (belum dites) | [Repo setelah patch] `Assets/Script/UI/FloatingPopupManager.cs`, `Assets/Editor/MarsPopupSetup.cs`; hook di `IceDeposit`, `FarmingPlot`, `WaterPurifier`, `OxygenGenerator`, `RepairPoint`, `InventorySystem`. Objek `FloatingPopupManager` di scene dibuat lewat menu `Mars > Setup Floating Popups` [?]. Ikon bawaan placeholder; sprite final belum diimpor |
+ | HP pemain (berkurang tiap 2 dtk saat kenyang 0) | Script dibuat 2026-11-27 (belum dites) | [Repo setelah patch] `Assets/Script/Survival/HealthSystem.cs`, `Assets/Editor/MarsHealthSetup.cs`, `HudUI.hpText/hpBar`. Belum dikompilasi/dites di Unity [?]. Panel HP dibuat lewat menu `Mars > Setup Health and HP HUD` [?]. Angka (100 HP, 3 HP/2 dtk, pulih +2 HP/2 dtk bila kenyang > 80 persen) USULAN. Game Over belum ada (hanya event `OnDied`) |
++| Pintu otomatis (animasi sprite 3 frame saat pemain menyentuh sensor) | Script dibuat 2026-11-28 (belum dites) | [Repo setelah patch] `Assets/Script/Door/DoorSensor.cs`. Belum dikompilasi/dites di Unity [?]. Objek pintu di scene dan sprite `primary_pintu1-3` belum ada di repo [Repo]; penyusunan scene oleh developer [?] |
+ | Save system | Belum ada | [Repo] |
+ | Tiga scene area (Control Room, Farming, Outdoor) | Belum ada | [Repo] hanya `SampleScene` |
+ 
+diff --git a/AI_CONTEXT/09_TEST_CHECKLIST.md b/AI_CONTEXT/09_TEST_CHECKLIST.md
+index aab1ceb7..4100e72d 100644
+--- a/AI_CONTEXT/09_TEST_CHECKLIST.md
++++ b/AI_CONTEXT/09_TEST_CHECKLIST.md
+@@ -359,3 +359,9 @@ Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan me
+ - [ ] (BARU, gaya terakota) Kartu hanya memakai warna terakota dan cokelat gelap (tanpa cyan/amber/merah); kotak portrait TARS di kiri menampilkan sprite TARS tidak buram (pixel art tajam); tab "TARS | PANDUAN" menempel di tepi atas dan tidak menimpa timer.
+ - [ ] Teks gelap terbaca jelas di atas kotak terakota; kotak TUJUAN SEKARANG (lebih gelap) terbaca dengan teks krem.
+ - [ ] Bila `downFrames` TARS kosong: kotak portrait tampil polos tanpa error.
++
++## Pintu otomatis (2026-11-28)
++- [ ] Pemain mendekat: pintu berganti pintu1 -> pintu2 -> pintu3 berurutan dan pemain bisa lewat.
++- [ ] Pemain menjauh dari sensor: pintu menutup pintu3 -> pintu2 -> pintu1; collider penghalang aktif lagi saat tertutup penuh.
++- [ ] Masuk dan keluar sensor cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat.
++- [ ] Tidak ada warning merah di Console (sensor Is Trigger, Frames terisi 3 sprite, Door Renderer terisi).
+diff --git a/AI_CONTEXT/10_CHANGELOG.md b/AI_CONTEXT/10_CHANGELOG.md
+index 596f9e18..054bdf49 100644
+--- a/AI_CONTEXT/10_CHANGELOG.md
++++ b/AI_CONTEXT/10_CHANGELOG.md
+@@ -10,6 +10,13 @@ Format:
+ - **Test:** pengujian dan hasil.
+ - **Follow-up:** pekerjaan tersisa.
+ 
++## 2026-11-28 (pintu otomatis)
++- **Changed:** Script baru `DoorSensor`: sensor (trigger) membuka pintu dengan mengganti sprite berurutan primary_pintu1 -> 2 -> 3 saat pemain masuk, dan menutup mundur saat pemain keluar. Collider penghalang opsional aktif hanya saat pintu tertutup. Pemain dikenali lewat `PlayerMovement` (Tag Player tidak dipakai; pemain di repo bertag Untagged).
++- **Reason:** developer ingin animasi pintu terbuka/tertutup saat pemain menyentuh sensor.
++- **Files/systems:** `Assets/Script/Door/DoorSensor.cs` (baru), `05`, `06`, `09`, `10`. Scene/prefab pintu dibuat developer manual di Unity.
++- **Test:** `git apply --check` pada klon `f58d0db3`. Belum dikompilasi atau dijalankan di Unity.
++- **Follow-up:** sprite `primary_pintu1/2/3` belum ada di repo (belum di-commit); developer menyusun objek Door/Blocker/Sensor di scene dan mengisi Inspector.
++
+ ## 2026-11-28 (gaya kartu tutorial)
+ - **Changed:** Kartu panduan memakai satu keluarga warna terakota (kotak, blok portrait, kotak tujuan lebih gelap, bingkai dan teks gelap), kotak portrait TARS di kiri (sprite hadap-bawah TARS), tab nama "TARS | PANDUAN". Warna cyan, amber, dan merah dihapus. Posisi tetap tengah atas (digeser ke y=190 agar tab tidak menimpa timer).
+ - **Reason:** developer: tampilan sebelumnya terlalu warna-warni; ingin gaya seperti referensi (kotak dialog dengan portrait karakter dan tab nama).
+diff --git a/Assets/Script/Door/DoorSensor.cs b/Assets/Script/Door/DoorSensor.cs
+new file mode 100644
+index 00000000..e8d021ee
+--- /dev/null
++++ b/Assets/Script/Door/DoorSensor.cs
+@@ -0,0 +1,112 @@
++using System.Collections;
++using UnityEngine;
++
++/// <summary>
++/// Sensor pintu otomatis. Pasang pada objek anak "Sensor" (Collider2D Is Trigger) di bawah objek pintu.
++/// Pemain masuk sensor: sprite pintu berganti berurutan frames[0] -> frames[1] -> frames[2] (terbuka).
++/// Pemain keluar sensor: berganti mundur sampai frames[0] (tertutup). Bila pemain keluar/masuk di tengah
++/// animasi, pintu langsung berbalik dari frame saat itu. Collider penghalang (opsional) hanya aktif
++/// saat pintu tertutup penuh. Pemain dikenali lewat PlayerMovement (bukan Tag), sama seperti IndoorZone.
++/// Hanya tampilan dan collision; tidak menyentuh resource, waktu, atau save.
++/// </summary>
++[RequireComponent(typeof(Collider2D))]
++public class DoorSensor : MonoBehaviour
++{
++    [Header("Visual")]
++    [SerializeField] private SpriteRenderer doorRenderer;
++    [Tooltip("Urutan frame: primary_pintu1 (tertutup), primary_pintu2, primary_pintu3 (terbuka penuh)")]
++    [SerializeField] private Sprite[] frames;
++    [SerializeField, Min(0.01f)] private float frameDelay = 0.12f;
++
++    [Header("Collision")]
++    [Tooltip("Collider non-trigger yang menghalangi jalan saat pintu tertutup (opsional)")]
++    [SerializeField] private Collider2D blockingCollider;
++
++    private int currentFrame;
++    private int targetFrame;
++    private int playersInside;
++    private Coroutine animRoutine;
++
++    private bool HasFrames => doorRenderer != null && frames != null && frames.Length > 0;
++
++    private void Reset()
++    {
++        Collider2D sensor = GetComponent<Collider2D>();
++        if (sensor != null) sensor.isTrigger = true;
++    }
++
++    private void Awake()
++    {
++        Collider2D sensor = GetComponent<Collider2D>();
++        if (sensor != null && !sensor.isTrigger)
++            Debug.LogWarning("DoorSensor: Collider2D sensor harus Is Trigger agar pintu terdeteksi.", this);
++        if (!HasFrames)
++            Debug.LogWarning("DoorSensor: isi Door Renderer dan Frames (primary_pintu1, 2, 3) di Inspector.", this);
++    }
++
++    private void Start()
++    {
++        ApplyFrame(0);
++    }
++
++    private void OnDisable()
++    {
++        if (animRoutine != null)
++        {
++            StopCoroutine(animRoutine);
++            animRoutine = null;
++        }
++        playersInside = 0;
++        targetFrame = 0;
++        if (HasFrames) ApplyFrame(0);
++    }
++
++    private void OnTriggerEnter2D(Collider2D other)
++    {
++        if (!IsPlayer(other)) return;
++
++        playersInside++;
++        SetTarget(HasFrames ? frames.Length - 1 : 0);
++    }
++
++    private void OnTriggerExit2D(Collider2D other)
++    {
++        if (!IsPlayer(other)) return;
++
++        playersInside = Mathf.Max(0, playersInside - 1);
++        if (playersInside == 0) SetTarget(0);
++    }
++
++    private static bool IsPlayer(Collider2D other)
++    {
++        return other.GetComponentInParent<PlayerMovement>() != null;
++    }
++
++    private void SetTarget(int index)
++    {
++        if (!HasFrames) return;
++
++        targetFrame = index;
++        if (animRoutine == null)
++            animRoutine = StartCoroutine(Animate());
++    }
++
++    private IEnumerator Animate()
++    {
++        while (currentFrame != targetFrame)
++        {
++            ApplyFrame(currentFrame + (currentFrame < targetFrame ? 1 : -1));
++            yield return new WaitForSeconds(frameDelay);
++        }
++        animRoutine = null;
++    }
++
++    private void ApplyFrame(int index)
++    {
++        currentFrame = index;
++        if (HasFrames) doorRenderer.sprite = frames[index];
++
++        // Penghalang aktif hanya saat pintu tertutup penuh (frame 0)
++        if (blockingCollider != null) blockingCollider.enabled = (index == 0);
++    }
++}

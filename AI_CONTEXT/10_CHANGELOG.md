@@ -10,6 +10,13 @@ Format:
 - **Test:** pengujian dan hasil.
 - **Follow-up:** pekerjaan tersisa.
 
+## 2026-11-28 (pintu otomatis)
+- **Changed:** Script baru `DoorSensor`: sensor (trigger) membuka pintu dengan mengganti sprite berurutan primary_pintu1 -> 2 -> 3 saat pemain masuk, dan menutup mundur saat pemain keluar. Collider penghalang opsional aktif hanya saat pintu tertutup. Pemain dikenali lewat `PlayerMovement` (Tag Player tidak dipakai; pemain di repo bertag Untagged).
+- **Reason:** developer ingin animasi pintu terbuka/tertutup saat pemain menyentuh sensor.
+- **Files/systems:** `Assets/Script/Door/DoorSensor.cs` (baru), `05`, `06`, `09`, `10`. Scene/prefab pintu dibuat developer manual di Unity.
+- **Test:** `git apply --check` pada klon `f58d0db3`. Belum dikompilasi atau dijalankan di Unity.
+- **Follow-up:** sprite `primary_pintu1/2/3` belum ada di repo (belum di-commit); developer menyusun objek Door/Blocker/Sensor di scene dan mengisi Inspector.
+
 ## 2026-11-28 (gaya kartu tutorial)
 - **Changed:** Kartu panduan memakai satu keluarga warna terakota (kotak, blok portrait, kotak tujuan lebih gelap, bingkai dan teks gelap), kotak portrait TARS di kiri (sprite hadap-bawah TARS), tab nama "TARS | PANDUAN". Warna cyan, amber, dan merah dihapus. Posisi tetap tengah atas (digeser ke y=190 agar tab tidak menimpa timer).
 - **Reason:** developer: tampilan sebelumnya terlalu warna-warni; ingin gaya seperti referensi (kotak dialog dengan portrait karakter dan tab nama).

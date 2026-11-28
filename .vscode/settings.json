@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "thelastharvest.slnx"
+    "dotnet.defaultSolution": "thelastharvest-2026-11-28-12-03-22.slnx"
 }
