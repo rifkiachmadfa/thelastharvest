@@ -8,7 +8,8 @@ using UnityEngine;
 /// Saat terbuka, sprite berganti berurutan sesuai urutan array frames (frames[0] tertutup, frames[^1] terbuka penuh).
 /// Saat syarat tidak terpenuhi lagi, sprite mundur sampai frames[0]. Perubahan arah di tengah animasi langsung
 /// berbalik dari frame saat itu. Collider penghalang (opsional) hanya aktif saat pintu tertutup penuh.
-/// Jarak dihitung dari posisi objek pemilik script ke posisi pemain. Hanya tampilan dan collision;
+/// Jarak dihitung dari pusat sprite pintu (Door Renderer; bila kosong, dari posisi objek ini) ke posisi pemain.
+/// Hanya tampilan dan collision;
 /// tidak mengubah resource, waktu, atau save. Nama class dipertahankan agar referensi scene tidak putus.
 /// </summary>
 public class DoorSensor : MonoBehaviour
@@ -84,9 +85,12 @@ public class DoorSensor : MonoBehaviour
 
         // Jarak tutup sedikit lebih besar dari jarak buka (histeresis) selama pintu sedang terbuka.
         float limit = targetFrame > 0 ? openDistance + closeMargin : openDistance;
-        float distance = Vector2.Distance(player.transform.position, transform.position);
+        float distance = Vector2.Distance(player.transform.position, DoorCenter);
         return distance <= limit;
     }
+
+    private Vector2 DoorCenter =>
+        doorRenderer != null ? (Vector2)doorRenderer.bounds.center : (Vector2)transform.position;
 
     private void SetTarget(int index)
     {
@@ -117,6 +121,22 @@ public class DoorSensor : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0.3f, 0.9f, 1f, 0.9f);
-        Gizmos.DrawWireSphere(transform.position, openDistance);
+        Gizmos.DrawWireSphere(DoorCenter, openDistance);
+    }
+
+    /// <summary>Klik kanan komponen > Cek Status Pintu (saat Play) untuk melihat kenapa pintu belum terbuka.</summary>
+    [ContextMenu("Cek Status Pintu")]
+    private void LogStatus()
+    {
+        string text = "DoorSensor: frames=" + (frames == null ? 0 : frames.Length) +
+                      ", DoorRenderer=" + (doorRenderer != null) +
+                      ", Player=" + (player != null) +
+                      ", SuitSystem=" + (suit != null);
+        if (suit != null)
+            text += ", IsEquipped=" + suit.IsEquipped + ", CanExit=" + suit.CanExit + ", IsOutdoors=" + suit.IsOutdoors;
+        if (player != null)
+            text += ", jarak=" + Vector2.Distance(player.transform.position, DoorCenter).ToString("F2");
+        text += ", openDistance=" + openDistance + ", frame=" + currentFrame + "/" + targetFrame;
+        Debug.Log(text, this);
     }
 }

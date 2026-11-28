@@ -367,3 +367,5 @@ Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan me
 - [ ] Pemain di luar (IsOutdoors) mendekat dari luar: pintu terbuka, sama seperti SuitGate mati saat pemain di luar.
 - [ ] Mendekat-menjauh cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat; tidak berkedip di tepi jarak.
 - [ ] Tidak ada warning di Console (Frames terisi, Door Renderer terisi, SuitSystem dan PlayerMovement ditemukan).
+- [ ] Menu `Mars > Setup Door`: objek `Door` muncul dengan 4 Frames terisi dan Door Renderer tersambung; dijalankan dua kali tidak membuat Door ganda.
+- [ ] Bila pintu belum terbuka saat Play: klik kanan Door Sensor > Cek Status Pintu; IsEquipped/CanExit true dan jarak <= openDistance.

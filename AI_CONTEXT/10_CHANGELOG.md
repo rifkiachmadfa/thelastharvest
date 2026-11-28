@@ -10,6 +10,13 @@ Format:
 - **Test:** pengujian dan hasil.
 - **Follow-up:** pekerjaan tersisa.
 
+## 2026-11-28 (setup pintu dan diagnosis)
+- **Changed:** Menu baru `Mars > Setup Door` (`MarsDoorSetup`) membuat objek Door, mengisi Frames primary_pintu1-4, menyambungkan Door Renderer. `DoorSensor`: jarak diukur dari pusat sprite pintu (bukan pivot objek) dan ada menu klik kanan `Cek Status Pintu`.
+- **Reason:** pintu belum terbuka. Diagnosis dari repo `36dd1b24`: `SampleScene.unity` tidak memuat objek dengan `DoorSensor` dan tidak mereferensikan sprite pintu, jadi tidak ada pintu yang berjalan di scene yang ter-commit.
+- **Files/systems:** `Assets/Script/Door/DoorSensor.cs`, `Assets/Editor/MarsDoorSetup.cs` (baru), `05`, `06`, `09`, `10`.
+- **Test:** `git apply --check` pada klon `36dd1b24`. Belum dikompilasi atau dijalankan di Unity.
+- **Follow-up:** developer menjalankan menu, memosisikan Door, men-commit scene; lihat hasil `Cek Status Pintu` bila masih tertutup.
+
 ## 2026-11-28 (pintu mengikuti aturan SuitGate)
 - **Changed:** `DoorSensor` tidak lagi memakai trigger. Pintu terbuka bila pemain dalam `openDistance` dan `SuitSystem.CanExit || IsOutdoors` (aturan sama dengan `SuitGate`), animasi sprite berurutan primary_pintu1 -> 4, menutup dengan histeresis `closeMargin`. Field Inspector lama (`doorRenderer`, `frames`, `frameDelay`, `blockingCollider`) dipertahankan; menambah `openDistance`, `closeMargin`, `suit`, `player`.
 - **Reason:** developer ingin pintu terbuka seperti mekanisme SuitGate: mendekat dalam jarak tertentu sambil mengenakan suit.

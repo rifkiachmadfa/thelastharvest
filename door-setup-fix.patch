@@ -1,0 +1,266 @@
+diff --git a/AI_CONTEXT/05_SCENES_ASSETS.md b/AI_CONTEXT/05_SCENES_ASSETS.md
+index 4e3bf40d..f042aff5 100644
+--- a/AI_CONTEXT/05_SCENES_ASSETS.md
++++ b/AI_CONTEXT/05_SCENES_ASSETS.md
+@@ -59,7 +59,8 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan
+ | `Assets/Script/Survival/HungerSystem.cs` | Kenyang pemain (0-100), berkurang selama gameplay, `Feed()` dipanggil InventorySystem saat makan kentang, event `OnSatietyChanged`, `OnStarvationFailure`. Dipasang pada GameObject `HungerSystem` |
+ | `Assets/Script/Survival/HealthSystem.cs` | HP pemain (0-100). Berkurang tiap `damageInterval` (2 dtk) sebesar `damageAmount` (3) selama kenyang 0; ikut `TimeManager.IsPaused`; event `OnHealthChanged`, `OnDied` (hanya log). Dipasang pada GameObject `HealthSystem` lewat menu (2026-11-27, belum dites) |
+ | `Assets/Script/Survival/HungerReminder.cs` | Pesan TARS (teks tetap) saat kenyang melewati 30%, 10%, 0; lewat antrean `TARSSystem` bila ada, dialog langsung bila tidak. Dipasang pada GameObject `HungerSystem` oleh menu setup |
+-| `Assets/Script/Door/DoorSensor.cs` | Pintu otomatis (2026-11-28, belum dites): terbuka bila pemain dalam `openDistance` dan `SuitSystem.CanExit` atau `IsOutdoors` (aturan sama dengan `SuitGate`); menutup lagi dengan histeresis `closeMargin`. Sprite `frames` berganti berurutan (primary_pintu1 tertutup, 2, 3, 4 terbuka penuh); `blockingCollider` opsional aktif hanya saat tertutup. Tanpa trigger/Tag; jarak dari posisi objek pemilik script ke `PlayerMovement`. Susunan scene dibuat developer [Dev, belum di-commit]. Sprite `primary_pintu1-4` ada di repo [Repo] |
++| `Assets/Script/Door/DoorSensor.cs` | Pintu otomatis (2026-11-28, belum dites): terbuka bila pemain dalam `openDistance` dan `SuitSystem.CanExit` atau `IsOutdoors` (aturan sama dengan `SuitGate`); menutup lagi dengan histeresis `closeMargin`. Sprite `frames` berganti berurutan (primary_pintu1 tertutup, 2, 3, 4 terbuka penuh); `blockingCollider` opsional aktif hanya saat tertutup. Tanpa trigger/Tag; jarak dari pusat sprite `doorRenderer` (atau posisi objek bila kosong) ke `PlayerMovement`; menu klik kanan `Cek Status Pintu` mencatat sebab pintu belum terbuka. Susunan scene dibuat developer [Dev, belum di-commit]. Sprite `primary_pintu1-4` ada di repo [Repo] |
++| `Assets/Editor/MarsDoorSetup.cs` | Menu Editor `Mars > Setup Door` (2026-11-28, belum dites): membuat objek `Door` (SpriteRenderer + `DoorSensor`) di posisi `SuitGate`, mengisi `Frames` dari `Assets/object/primary_pintu1..4`, menyambungkan `doorRenderer`; tidak menimpa objek/isian yang sudah ada |
+ | `Assets/Script/Station/FoodStorage.cs` | Storage di Control Room (IInteractable "Buka storage"): membuka `StorageUI`. Nama class lama dipertahankan. Layer `Interactable`, Collider2D Is Trigger |
+ | `Assets/Script/Inventory/ItemType.cs` | Enum item tas: Potato (1), Ice (2), Seed (3) |
+ | `Assets/Script/Inventory/InventorySystem.cs` | Tas pemain (kentang 10, es 10, bibit 5), storage es dan bibit, pilihan slot (tombol 1-3), aksi bawaan (makan). Dipasang pada GameObject `InventorySystem` |
+diff --git a/AI_CONTEXT/06_PROJECT_STATUS.md b/AI_CONTEXT/06_PROJECT_STATUS.md
+index e54d5316..e0c598d8 100644
+--- a/AI_CONTEXT/06_PROJECT_STATUS.md
++++ b/AI_CONTEXT/06_PROJECT_STATUS.md
+@@ -42,7 +42,7 @@ Fondasi pemain dan NPC. Setara sekitar hari produksi 1–2 dari jadwal 15 hari:
+ | Tutorial Day 1 | Script dibuat 2026-11-17 (belum dites) | [Repo setelah patch] `Assets/Script/Tutorial/{TutorialManager,TutorialStepId,TutorialStepData,TutorialGuideUI}.cs`, `Assets/Editor/MarsTutorialSetup.cs`, event `TarsWanderer.OnPlayerTalked`. 8 langkah dengan syarat USULAN (dikunci, urutan bebas; langkah RemoveSuit ditambah 2026-11-17), arahan TARS PLACEHOLDER, status selesai di `PlayerPrefs`, lewati dengan Tab, garis arah UI ke tujuan tiap langkah. Belum dikompilasi/dites di Unity [?] |
+ | Popup mengambang ikon + teks (Es +1, Kentang +2, Water -2, Oxygen +10, makan) | Script dibuat 2026-11-17 (belum dites) | [Repo setelah patch] `Assets/Script/UI/FloatingPopupManager.cs`, `Assets/Editor/MarsPopupSetup.cs`; hook di `IceDeposit`, `FarmingPlot`, `WaterPurifier`, `OxygenGenerator`, `RepairPoint`, `InventorySystem`. Objek `FloatingPopupManager` di scene dibuat lewat menu `Mars > Setup Floating Popups` [?]. Ikon bawaan placeholder; sprite final belum diimpor |
+ | HP pemain (berkurang tiap 2 dtk saat kenyang 0) | Script dibuat 2026-11-27 (belum dites) | [Repo setelah patch] `Assets/Script/Survival/HealthSystem.cs`, `Assets/Editor/MarsHealthSetup.cs`, `HudUI.hpText/hpBar`. Belum dikompilasi/dites di Unity [?]. Panel HP dibuat lewat menu `Mars > Setup Health and HP HUD` [?]. Angka (100 HP, 3 HP/2 dtk, pulih +2 HP/2 dtk bila kenyang > 80 persen) USULAN. Game Over belum ada (hanya event `OnDied`) |
+-| Pintu otomatis (terbuka berurutan saat pemain dekat dan bersuit, aturan seperti SuitGate) | Script diubah 2026-11-28 dari sensor trigger ke jarak + SuitSystem (belum dites) | [Repo setelah patch] `Assets/Script/Door/DoorSensor.cs`. Belum dikompilasi/dites di Unity [?]. Sprite `primary_pintu1-4` ada di repo [Repo]; penyusunan objek pintu di scene oleh developer [?] |
++| Pintu otomatis (terbuka berurutan saat pemain dekat dan bersuit, aturan seperti SuitGate) | Script + menu setup dibuat 2026-11-28 (belum dites). Temuan 2026-11-28: `SampleScene` di repo belum berisi objek pintu (GUID `DoorSensor` dan sprite pintu tidak direferensikan scene/prefab mana pun) | [Repo] `Assets/Script/Door/DoorSensor.cs`, `Assets/Editor/MarsDoorSetup.cs`. Objek pintu di scene lokal developer [Dev, belum di-commit]. Belum dikompilasi/dites di Unity [?] |
+ | Save system | Belum ada | [Repo] |
+ | Tiga scene area (Control Room, Farming, Outdoor) | Belum ada | [Repo] hanya `SampleScene` |
+ 
+diff --git a/AI_CONTEXT/09_TEST_CHECKLIST.md b/AI_CONTEXT/09_TEST_CHECKLIST.md
+index b4cc35ab..d0611963 100644
+--- a/AI_CONTEXT/09_TEST_CHECKLIST.md
++++ b/AI_CONTEXT/09_TEST_CHECKLIST.md
+@@ -367,3 +367,5 @@ Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan me
+ - [ ] Pemain di luar (IsOutdoors) mendekat dari luar: pintu terbuka, sama seperti SuitGate mati saat pemain di luar.
+ - [ ] Mendekat-menjauh cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat; tidak berkedip di tepi jarak.
+ - [ ] Tidak ada warning di Console (Frames terisi, Door Renderer terisi, SuitSystem dan PlayerMovement ditemukan).
++- [ ] Menu `Mars > Setup Door`: objek `Door` muncul dengan 4 Frames terisi dan Door Renderer tersambung; dijalankan dua kali tidak membuat Door ganda.
++- [ ] Bila pintu belum terbuka saat Play: klik kanan Door Sensor > Cek Status Pintu; IsEquipped/CanExit true dan jarak <= openDistance.
+diff --git a/AI_CONTEXT/10_CHANGELOG.md b/AI_CONTEXT/10_CHANGELOG.md
+index 0a01a6b1..1f05aac5 100644
+--- a/AI_CONTEXT/10_CHANGELOG.md
++++ b/AI_CONTEXT/10_CHANGELOG.md
+@@ -10,6 +10,13 @@ Format:
+ - **Test:** pengujian dan hasil.
+ - **Follow-up:** pekerjaan tersisa.
+ 
++## 2026-11-28 (setup pintu dan diagnosis)
++- **Changed:** Menu baru `Mars > Setup Door` (`MarsDoorSetup`) membuat objek Door, mengisi Frames primary_pintu1-4, menyambungkan Door Renderer. `DoorSensor`: jarak diukur dari pusat sprite pintu (bukan pivot objek) dan ada menu klik kanan `Cek Status Pintu`.
++- **Reason:** pintu belum terbuka. Diagnosis dari repo `36dd1b24`: `SampleScene.unity` tidak memuat objek dengan `DoorSensor` dan tidak mereferensikan sprite pintu, jadi tidak ada pintu yang berjalan di scene yang ter-commit.
++- **Files/systems:** `Assets/Script/Door/DoorSensor.cs`, `Assets/Editor/MarsDoorSetup.cs` (baru), `05`, `06`, `09`, `10`.
++- **Test:** `git apply --check` pada klon `36dd1b24`. Belum dikompilasi atau dijalankan di Unity.
++- **Follow-up:** developer menjalankan menu, memosisikan Door, men-commit scene; lihat hasil `Cek Status Pintu` bila masih tertutup.
++
+ ## 2026-11-28 (pintu mengikuti aturan SuitGate)
+ - **Changed:** `DoorSensor` tidak lagi memakai trigger. Pintu terbuka bila pemain dalam `openDistance` dan `SuitSystem.CanExit || IsOutdoors` (aturan sama dengan `SuitGate`), animasi sprite berurutan primary_pintu1 -> 4, menutup dengan histeresis `closeMargin`. Field Inspector lama (`doorRenderer`, `frames`, `frameDelay`, `blockingCollider`) dipertahankan; menambah `openDistance`, `closeMargin`, `suit`, `player`.
+ - **Reason:** developer ingin pintu terbuka seperti mekanisme SuitGate: mendekat dalam jarak tertentu sambil mengenakan suit.
+diff --git a/Assets/Editor/MarsDoorSetup.cs b/Assets/Editor/MarsDoorSetup.cs
+new file mode 100644
+index 00000000..5ae19d60
+--- /dev/null
++++ b/Assets/Editor/MarsDoorSetup.cs
+@@ -0,0 +1,152 @@
++#if UNITY_EDITOR
++using System.Collections.Generic;
++using System.Text;
++using UnityEditor;
++using UnityEditor.SceneManagement;
++using UnityEngine;
++
++/// <summary>
++/// Menu Editor: membuat objek pintu otomatis (SpriteRenderer + DoorSensor), mengisi Frames dari sprite
++/// Assets/object/primary_pintu1..4, dan menyambungkan Door Renderer. Pintu baru diletakkan di posisi SuitGate
++/// (bila ada), atau di atas Player sebagai placeholder.
++/// Aman dijalankan berulang kali; objek dan isian Inspector yang sudah ada tidak ditimpa.
++/// Mars > Setup Door
++/// </summary>
++public static class MarsDoorSetup
++{
++    private const int FrameCount = 4;
++    private const string SpritePathFormat = "Assets/object/primary_pintu{0}.png";
++
++    [MenuItem("Mars/Setup Door")]
++    public static void Setup()
++    {
++        StringBuilder report = new StringBuilder();
++
++        PlayerMovement player = Object.FindFirstObjectByType<PlayerMovement>();
++        if (player == null)
++        {
++            EditorUtility.DisplayDialog("Mars Setup", "PlayerMovement tidak ditemukan di scene.", "OK");
++            return;
++        }
++
++        if (Object.FindFirstObjectByType<SuitSystem>() == null)
++            report.AppendLine("- PERINGATAN: SuitSystem tidak ada di scene; pintu tidak akan terbuka. Jalankan Mars > Setup Suit and Gate.");
++
++        // 1. Sprite frame (urut berdasarkan nama file: primary_pintu1, 2, 3, 4)
++        List<Sprite> sprites = new List<Sprite>();
++        for (int i = 1; i <= FrameCount; i++)
++        {
++            Sprite sprite = LoadFirstSprite(string.Format(SpritePathFormat, i));
++            if (sprite == null)
++            {
++                report.AppendLine("- PERINGATAN: sprite " + string.Format(SpritePathFormat, i) +
++                                  " tidak ditemukan atau belum bertipe Sprite. Frames tidak diisi otomatis.");
++                sprites.Clear();
++                break;
++            }
++            sprites.Add(sprite);
++        }
++
++        // 2. Objek pintu (pakai DoorSensor yang sudah ada bila ada)
++        DoorSensor door = Object.FindFirstObjectByType<DoorSensor>();
++        if (door == null)
++        {
++            GameObject go = new GameObject("Door", typeof(SpriteRenderer));
++            Undo.RegisterCreatedObjectUndo(go, "Create Door");
++
++            SuitGate gate = Object.FindFirstObjectByType<SuitGate>();
++            go.transform.position = gate != null
++                ? gate.transform.position
++                : player.transform.position + new Vector3(0f, 3f, 0f);
++
++            SpriteRenderer renderer = go.GetComponent<SpriteRenderer>();
++            if (sprites.Count > 0) renderer.sprite = sprites[0];
++            renderer.sortingOrder = 10;
++
++            door = Undo.AddComponent<DoorSensor>(go);
++            report.AppendLine(gate != null
++                ? "- Door dibuat di posisi SuitGate. Atur posisi dan Scale agar pas dengan pintu."
++                : "- Door dibuat di atas Player. WAJIB dipindahkan ke pintu keluar dan di-scale agar pas.");
++        }
++        else
++        {
++            report.AppendLine("- DoorSensor sudah ada: " + door.gameObject.name);
++        }
++
++        // 3. Door Renderer
++        SerializedObject so = new SerializedObject(door);
++        SerializedProperty rendererProp = so.FindProperty("doorRenderer");
++        if (rendererProp != null && rendererProp.objectReferenceValue == null)
++        {
++            SpriteRenderer found = door.GetComponent<SpriteRenderer>();
++            if (found == null) found = door.GetComponentInParent<SpriteRenderer>();
++            if (found == null) found = door.GetComponentInChildren<SpriteRenderer>();
++
++            if (found != null)
++            {
++                rendererProp.objectReferenceValue = found;
++                report.AppendLine("- Door Renderer disambungkan ke " + found.gameObject.name + ".");
++            }
++            else
++            {
++                report.AppendLine("- PERINGATAN: tidak ada SpriteRenderer untuk Door Renderer. Isi manual di Inspector.");
++            }
++        }
++
++        // 4. Frames (hanya diisi bila kosong atau ada elemen kosong)
++        SerializedProperty framesProp = so.FindProperty("frames");
++        if (framesProp != null && sprites.Count == FrameCount && NeedsFrames(framesProp))
++        {
++            framesProp.arraySize = FrameCount;
++            for (int i = 0; i < FrameCount; i++)
++                framesProp.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
++            report.AppendLine("- Frames diisi: primary_pintu1 (tertutup), 2, 3, 4 (terbuka penuh).");
++        }
++        else if (framesProp != null && !NeedsFrames(framesProp))
++        {
++            report.AppendLine("- Frames sudah terisi; tidak diubah.");
++        }
++
++        so.ApplyModifiedProperties();
++
++        // 5. Sprite awal = frame tertutup (hanya bila renderer belum punya sprite)
++        SpriteRenderer doorRenderer = rendererProp != null ? rendererProp.objectReferenceValue as SpriteRenderer : null;
++        if (doorRenderer != null && doorRenderer.sprite == null && sprites.Count > 0)
++        {
++            Undo.RecordObject(doorRenderer, "Set Door Sprite");
++            doorRenderer.sprite = sprites[0];
++        }
++
++        report.AppendLine();
++        report.AppendLine("Pintu terbuka bila pemain mengenakan suit (oksigen cukup) atau sudah di luar, dan berada dalam Open Distance dari pusat sprite pintu (lingkaran biru muda di Scene view saat Door dipilih).");
++        report.AppendLine("Cek juga: Order in Layer Door (bawaan 10) tidak tertutup Tilemap, dan SuitGate tetap berfungsi sebagai tembok.");
++        report.AppendLine("Bila pintu belum terbuka saat Play: klik kanan komponen Door Sensor > Cek Status Pintu, lalu lihat Console.");
++        report.AppendLine();
++        report.Append("Tekan Ctrl+S untuk menyimpan scene.");
++
++        Selection.activeGameObject = door.gameObject;
++        EditorSceneManager.MarkSceneDirty(door.gameObject.scene);
++        Debug.Log("MarsDoorSetup:\n" + report);
++        EditorUtility.DisplayDialog("Mars Setup", report.ToString(), "OK");
++    }
++
++    private static bool NeedsFrames(SerializedProperty framesProp)
++    {
++        if (framesProp.arraySize == 0) return true;
++        for (int i = 0; i < framesProp.arraySize; i++)
++            if (framesProp.GetArrayElementAtIndex(i).objectReferenceValue == null) return true;
++        return false;
++    }
++
++    // Satu file PNG bisa berisi beberapa sprite (Sprite Mode Multiple); ambil yang pertama.
++    private static Sprite LoadFirstSprite(string path)
++    {
++        foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
++        {
++            Sprite sprite = asset as Sprite;
++            if (sprite != null) return sprite;
++        }
++        return null;
++    }
++}
++#endif
+diff --git a/Assets/Script/Door/DoorSensor.cs b/Assets/Script/Door/DoorSensor.cs
+index f3cfc2c0..f2731aca 100644
+--- a/Assets/Script/Door/DoorSensor.cs
++++ b/Assets/Script/Door/DoorSensor.cs
+@@ -8,7 +8,8 @@ using UnityEngine;
+ /// Saat terbuka, sprite berganti berurutan sesuai urutan array frames (frames[0] tertutup, frames[^1] terbuka penuh).
+ /// Saat syarat tidak terpenuhi lagi, sprite mundur sampai frames[0]. Perubahan arah di tengah animasi langsung
+ /// berbalik dari frame saat itu. Collider penghalang (opsional) hanya aktif saat pintu tertutup penuh.
+-/// Jarak dihitung dari posisi objek pemilik script ke posisi pemain. Hanya tampilan dan collision;
++/// Jarak dihitung dari pusat sprite pintu (Door Renderer; bila kosong, dari posisi objek ini) ke posisi pemain.
++/// Hanya tampilan dan collision;
+ /// tidak mengubah resource, waktu, atau save. Nama class dipertahankan agar referensi scene tidak putus.
+ /// </summary>
+ public class DoorSensor : MonoBehaviour
+@@ -84,10 +85,13 @@ public class DoorSensor : MonoBehaviour
+ 
+         // Jarak tutup sedikit lebih besar dari jarak buka (histeresis) selama pintu sedang terbuka.
+         float limit = targetFrame > 0 ? openDistance + closeMargin : openDistance;
+-        float distance = Vector2.Distance(player.transform.position, transform.position);
++        float distance = Vector2.Distance(player.transform.position, DoorCenter);
+         return distance <= limit;
+     }
+ 
++    private Vector2 DoorCenter =>
++        doorRenderer != null ? (Vector2)doorRenderer.bounds.center : (Vector2)transform.position;
++
+     private void SetTarget(int index)
+     {
+         targetFrame = index;
+@@ -117,6 +121,22 @@ public class DoorSensor : MonoBehaviour
+     private void OnDrawGizmosSelected()
+     {
+         Gizmos.color = new Color(0.3f, 0.9f, 1f, 0.9f);
+-        Gizmos.DrawWireSphere(transform.position, openDistance);
++        Gizmos.DrawWireSphere(DoorCenter, openDistance);
++    }
++
++    /// <summary>Klik kanan komponen > Cek Status Pintu (saat Play) untuk melihat kenapa pintu belum terbuka.</summary>
++    [ContextMenu("Cek Status Pintu")]
++    private void LogStatus()
++    {
++        string text = "DoorSensor: frames=" + (frames == null ? 0 : frames.Length) +
++                      ", DoorRenderer=" + (doorRenderer != null) +
++                      ", Player=" + (player != null) +
++                      ", SuitSystem=" + (suit != null);
++        if (suit != null)
++            text += ", IsEquipped=" + suit.IsEquipped + ", CanExit=" + suit.CanExit + ", IsOutdoors=" + suit.IsOutdoors;
++        if (player != null)
++            text += ", jarak=" + Vector2.Distance(player.transform.position, DoorCenter).ToString("F2");
++        text += ", openDistance=" + openDistance + ", frame=" + currentFrame + "/" + targetFrame;
++        Debug.Log(text, this);
+     }
+ }
