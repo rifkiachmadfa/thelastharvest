@@ -361,7 +361,9 @@ Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan me
 - [ ] Bila `downFrames` TARS kosong: kotak portrait tampil polos tanpa error.
 
 ## Pintu otomatis (2026-11-28)
-- [ ] Pemain mendekat: pintu berganti pintu1 -> pintu2 -> pintu3 berurutan dan pemain bisa lewat.
-- [ ] Pemain menjauh dari sensor: pintu menutup pintu3 -> pintu2 -> pintu1; collider penghalang aktif lagi saat tertutup penuh.
-- [ ] Masuk dan keluar sensor cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat.
-- [ ] Tidak ada warning merah di Console (sensor Is Trigger, Frames terisi 3 sprite, Door Renderer terisi).
+- [ ] Tanpa suit, mendekati pintu: pintu tetap tertutup (tidak ada animasi).
+- [ ] Mengenakan suit (oksigen cukup) dan mendekat dalam `openDistance`: pintu berganti pintu1 -> pintu2 -> pintu3 -> pintu4 berurutan.
+- [ ] Menjauh melewati `openDistance + closeMargin`: pintu menutup mundur pintu4 -> pintu1; collider penghalang aktif lagi saat tertutup penuh.
+- [ ] Pemain di luar (IsOutdoors) mendekat dari luar: pintu terbuka, sama seperti SuitGate mati saat pemain di luar.
+- [ ] Mendekat-menjauh cepat: pintu berbalik arah dari frame saat itu, tidak macet atau melompat; tidak berkedip di tepi jarak.
+- [ ] Tidak ada warning di Console (Frames terisi, Door Renderer terisi, SuitSystem dan PlayerMovement ditemukan).

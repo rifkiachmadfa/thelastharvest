@@ -10,6 +10,13 @@ Format:
 - **Test:** pengujian dan hasil.
 - **Follow-up:** pekerjaan tersisa.
 
+## 2026-11-28 (pintu mengikuti aturan SuitGate)
+- **Changed:** `DoorSensor` tidak lagi memakai trigger. Pintu terbuka bila pemain dalam `openDistance` dan `SuitSystem.CanExit || IsOutdoors` (aturan sama dengan `SuitGate`), animasi sprite berurutan primary_pintu1 -> 4, menutup dengan histeresis `closeMargin`. Field Inspector lama (`doorRenderer`, `frames`, `frameDelay`, `blockingCollider`) dipertahankan; menambah `openDistance`, `closeMargin`, `suit`, `player`.
+- **Reason:** developer ingin pintu terbuka seperti mekanisme SuitGate: mendekat dalam jarak tertentu sambil mengenakan suit.
+- **Files/systems:** `Assets/Script/Door/DoorSensor.cs`, `05`, `06`, `09`, `10`. `SuitGate` dan `SuitSystem` tidak diubah.
+- **Test:** `git apply --check` pada klon `f476d7aa`. Belum dikompilasi atau dijalankan di Unity.
+- **Follow-up:** developer mengisi Frames (4 sprite) dan `openDistance` di Inspector; mengatur Frames bila pintu1 bukan frame tertutup.
+
 ## 2026-11-28 (pintu otomatis)
 - **Changed:** Script baru `DoorSensor`: sensor (trigger) membuka pintu dengan mengganti sprite berurutan primary_pintu1 -> 2 -> 3 saat pemain masuk, dan menutup mundur saat pemain keluar. Collider penghalang opsional aktif hanya saat pintu tertutup. Pemain dikenali lewat `PlayerMovement` (Tag Player tidak dipakai; pemain di repo bertag Untagged).
 - **Reason:** developer ingin animasi pintu terbuka/tertutup saat pemain menyentuh sensor.
