@@ -31,6 +31,8 @@ public class TARSSystem : MonoBehaviour
         public Priority priority;
         public Func<string[]> buildLines;
         public Func<bool> isStillValid;
+        public Action onClosed;
+        public TutorialDialogueInfo? tutorialInfo;
         public float queuedAt;
         public int order;
     }
@@ -177,8 +179,11 @@ public class TARSSystem : MonoBehaviour
     /// Mengantrekan pesan TARS. Kunci yang sama tidak diantrekan ganda (isi diperbarui) dan tidak diumumkan ulang
     /// selama cooldown. buildLines dipanggil saat pesan akan tampil, jadi angka di dalamnya selalu terbaru.
     /// isStillValid (opsional) dipanggil sebelum tampil; bila false pesan dibuang (misalnya masalah sudah teratasi).
+    /// onClosed (opsional) dipanggil setelah pemain selesai membaca dialog pesan ini (dipakai TutorialManager).
+    /// tutorialInfo (opsional): bila diisi, pesan tampil di kartu panduan tutorial, bukan kotak dialog biasa.
     /// </summary>
-    public void Announce(string key, Priority priority, Func<string[]> buildLines, Func<bool> isStillValid = null)
+    public void Announce(string key, Priority priority, Func<string[]> buildLines, Func<bool> isStillValid = null,
+        Action onClosed = null, TutorialDialogueInfo? tutorialInfo = null)
     {
         if (string.IsNullOrEmpty(key) || buildLines == null) return;
         if (nextAllowedByKey.TryGetValue(key, out float allowedAt) && Time.time < allowedAt) return;
@@ -190,6 +195,8 @@ public class TARSSystem : MonoBehaviour
             existing.priority = priority;
             existing.buildLines = buildLines;
             existing.isStillValid = isStillValid;
+            existing.onClosed = onClosed;
+            existing.tutorialInfo = tutorialInfo;
             return;
         }
 
@@ -199,6 +206,8 @@ public class TARSSystem : MonoBehaviour
             priority = priority,
             buildLines = buildLines,
             isStillValid = isStillValid,
+            onClosed = onClosed,
+            tutorialInfo = tutorialInfo,
             queuedAt = Time.time,
             order = orderCounter++
         });
@@ -506,11 +515,16 @@ public class TARSSystem : MonoBehaviour
         {
             Debug.Log("TARS: " + string.Join(" ", lines));
             nextShowTime = Time.time + globalCooldownSeconds;
+            message.onClosed?.Invoke();
             return;
         }
 
         nextShowTime = Time.time + globalCooldownSeconds;
-        dialogueUI.Show(speakerName, lines, () => nextShowTime = Time.time + globalCooldownSeconds);
+        dialogueUI.Show(speakerName, lines, () =>
+        {
+            nextShowTime = Time.time + globalCooldownSeconds;
+            message.onClosed?.Invoke();
+        }, message.tutorialInfo);
     }
 
     // ---------- Laporan (dialog E pada TARS) ----------

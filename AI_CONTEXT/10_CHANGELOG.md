@@ -10,6 +10,27 @@ Format:
 - **Test:** pengujian dan hasil.
 - **Follow-up:** pekerjaan tersisa.
 
+## 2026-11-28 (gaya kartu tutorial)
+- **Changed:** Kartu panduan memakai satu keluarga warna terakota (kotak, blok portrait, kotak tujuan lebih gelap, bingkai dan teks gelap), kotak portrait TARS di kiri (sprite hadap-bawah TARS), tab nama "TARS | PANDUAN". Warna cyan, amber, dan merah dihapus. Posisi tetap tengah atas (digeser ke y=190 agar tab tidak menimpa timer).
+- **Reason:** developer: tampilan sebelumnya terlalu warna-warni; ingin gaya seperti referensi (kotak dialog dengan portrait karakter dan tab nama).
+- **Files/systems:** `TutorialDialogueSkin`, `DialogueUI` (mengirim portrait), `TarsWanderer` (`PortraitSprite`), `PHASE.md`, `09`, `10`.
+- **Test:** `git apply --check` berurutan pada klon `a0e7727f` + dua patch sebelumnya. Belum dikompilasi atau dilihat di Unity.
+- **Follow-up:** lihat hasil di Game view; sesuaikan ukuran portrait/posisi bila perlu.
+
+## 2026-11-28 (kartu panduan tutorial)
+- **Changed:** Pesan tutorial TARS tampil di kartu panduan (`TutorialDialogueSkin`): tengah atas layar, garis tepi cyan, lencana PANDUAN, "Langkah n dari N", judul langkah, isi cerita, kotak amber TUJUAN SEKARANG untuk baris "Sekarang: ...", petunjuk [E]. Dialog biasa tidak berubah (bawah layar).
+- **Reason:** developer ingin pemain bisa membedakan dialog tutorial dari dialog biasa.
+- **Files/systems:** `TutorialDialogueSkin` (baru), `DialogueUI` (overload `Show` dengan `tutorialInfo`), `TARSSystem` (`Announce` parameter `tutorialInfo`), `TutorialManager`, `PHASE.md`, `03`, `05`, `06`, `08`, `09`.
+- **Test:** `git apply --check` pada klon `a0e7727f` + `tutorial-story.patch`. Belum dikompilasi atau dijalankan di Unity; tata letak kartu (Layout Group) belum dilihat.
+- **Follow-up:** lihat kartu di resolusi 1920x1080 dan lebih kecil; cek tidak menimpa HUD; sesuaikan posisi/warna di konstanta `TutorialDialogueSkin`.
+
+## 2026-11-28 (tutorial bercerita)
+- **Changed:** Tutorial Day 1 ditulis ulang sebagai cerita sebab-akibat (apa, mengapa, "Sekarang: ..."); langkah baru `Hungry` (kenyang diturunkan sekali lalu TARS menjelaskan kenyang, HP, kentang sebelum menanam), `Harvest`, `Recap`; urutan Farming dan OxygenGenerator tetap, `Eat` setelah panen; pengingat 120 detik hanya mengulang baris terakhir; flag `useBuiltInStory`; prefix PLACEHOLDER hilang.
+- **Reason:** hasil uji ke beberapa player: tutorial kurang informatif dan membingungkan; developer ingin player merasakan lapar dulu, lalu menanam kentang agar paham gunanya.
+- **Files/systems:** `TutorialManager`, `TutorialStepId`, `HungerSystem` (`LowerSatietyTo`), `TARSSystem` (`Announce` parameter `onClosed`), `PHASE.md`, `06`, `08`, `09`.
+- **Test:** `git apply --check` pada klon bersih `a0e7727f`. Belum dikompilasi atau dijalankan di Unity.
+- **Follow-up:** playtest ulang dengan player; tinjau teks; putuskan P-7 dan P-8 (balancing Food awal).
+
 ## 2026-11-27 (Koreksi: satu RepairPoint melayani semua Solar Panel)
 - **Changed:** Developer menegaskan desain: SATU `RepairPoint` memperbaiki SEMUA `SolarPanel`. `RepairPoint` kini (bawaan `servesAllPanels` aktif) menangani panel rusak pertama di scene (urut nama lalu posisi), menawarkan panel rusak berikutnya setelah satu selesai, dan prompt menampilkan jumlah panel rusak. Field `Panel` jadi panel utama/cadangan (boleh kosong). `RepairPoint.Serves(panel)` dipakai `SolarPanelDamageScheduler`. Menu `Setup Solar Panel Repair Points` diganti `Mars > Setup Solar Panel Names`: hanya memberi nama "Solar Panel N" dan menghapus RepairPoint anak panel buatan menu lama (RepairPoint asli tidak disentuh).
 - **Reason:** Analisis sebelumnya ("tiap panel perlu RepairPoint sendiri") salah terhadap desain; akar masalah sebenarnya: RepairPoint hanya melayani panel yang diisi di field `Panel` (1 dari 9).

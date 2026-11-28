@@ -8,6 +8,8 @@ using UnityEngine.UI;
 /// Tombol Tutup (opsional, closeButton) menutup dialog langsung, melewati sisa baris.
 /// Dialog TIDAK menghentikan waktu atau resource (lihat TimeManager.pauseDuringDialogue).
 /// Hanya tampilan: isi dialog dikirim oleh pemanggil (misalnya TARS).
+/// Pesan tutorial (Show dengan tutorialInfo) memakai kartu panduan TutorialDialogueSkin di tengah atas layar, bukan kotak
+/// dialog biasa di bawah, agar pemain bisa membedakannya. Input, IsOpen, dan callback tetap satu jalur di kelas ini.
 /// </summary>
 public class DialogueUI : MonoBehaviour
 {
@@ -27,6 +29,8 @@ public class DialogueUI : MonoBehaviour
     private int lineIndex;
     private Action onFinished;
     private int openedFrame = -1;
+    private TutorialDialogueSkin tutorialSkin;
+    private bool usingTutorialSkin;
 
     public bool IsOpen { get; private set; }
 
@@ -47,6 +51,7 @@ public class DialogueUI : MonoBehaviour
     private void OnDestroy()
     {
         if (closeButton != null) closeButton.onClick.RemoveListener(CloseNow);
+        if (tutorialSkin != null) tutorialSkin.OnCloseClicked -= CloseNow;
     }
 
     private void Update()
@@ -73,6 +78,8 @@ public class DialogueUI : MonoBehaviour
     // Klik pada tombol Tutup ditangani tombolnya sendiri; jangan dihitung juga sebagai "klik di mana saja".
     private bool IsPointerOverCloseButton()
     {
+        if (usingTutorialSkin && tutorialSkin != null) return tutorialSkin.IsPointerOverClose(Input.mousePosition);
+
         if (closeButton == null || !closeButton.gameObject.activeInHierarchy) return false;
 
         Canvas canvas = closeButton.GetComponentInParent<Canvas>();
@@ -81,6 +88,15 @@ public class DialogueUI : MonoBehaviour
     }
 
     public void Show(string speaker, string[] dialogueLines, Action finishedCallback)
+    {
+        Show(speaker, dialogueLines, finishedCallback, null);
+    }
+
+    /// <summary>
+    /// Menampilkan dialog. Bila tutorialInfo diisi, pesan tampil di kartu panduan tutorial (TutorialDialogueSkin);
+    /// bila null, di kotak dialog biasa.
+    /// </summary>
+    public void Show(string speaker, string[] dialogueLines, Action finishedCallback, TutorialDialogueInfo? tutorialInfo)
     {
         if (!enabled || dialogueLines == null || dialogueLines.Length == 0)
         {
@@ -92,12 +108,41 @@ public class DialogueUI : MonoBehaviour
         lineIndex = 0;
         onFinished = finishedCallback;
         openedFrame = Time.frameCount;
+        usingTutorialSkin = tutorialInfo.HasValue;
 
-        if (speakerText != null) speakerText.text = speaker;
+        if (usingTutorialSkin)
+        {
+            EnsureTutorialSkin();
+            dialogueRoot.SetActive(false);
+            tutorialSkin.Open(tutorialInfo.Value);
+        }
+        else
+        {
+            if (tutorialSkin != null) tutorialSkin.Hide();
+            if (speakerText != null) speakerText.text = speaker;
+            dialogueRoot.SetActive(true);
+        }
 
         IsOpen = true;
-        dialogueRoot.SetActive(true);
-        lineText.text = lines[lineIndex];
+        RenderLine();
+    }
+
+    private void EnsureTutorialSkin()
+    {
+        if (tutorialSkin != null) return;
+
+        // Saudara DialogueRoot di Canvas yang sama, tepat di atasnya dalam urutan gambar.
+        Transform parent = dialogueRoot.transform.parent;
+        TarsWanderer tars = FindFirstObjectByType<TarsWanderer>();
+        Sprite portrait = tars != null ? tars.PortraitSprite : null;
+        tutorialSkin = TutorialDialogueSkin.Create(parent, dialogueRoot.transform.GetSiblingIndex() + 1, lineText.font, portrait);
+        tutorialSkin.OnCloseClicked += CloseNow;
+    }
+
+    private void RenderLine()
+    {
+        if (usingTutorialSkin && tutorialSkin != null) tutorialSkin.Render(lineIndex, lines.Length, lines[lineIndex]);
+        else lineText.text = lines[lineIndex];
     }
 
     private void ShowNextLine()
@@ -110,13 +155,15 @@ public class DialogueUI : MonoBehaviour
             return;
         }
 
-        lineText.text = lines[lineIndex];
+        RenderLine();
     }
 
     private void Close()
     {
         IsOpen = false;
         dialogueRoot.SetActive(false);
+        if (tutorialSkin != null) tutorialSkin.Hide();
+        usingTutorialSkin = false;
 
         Action callback = onFinished;
         onFinished = null;

@@ -331,3 +331,31 @@ Siapkan: jalankan `Mars > Setup HUD and Time` (dan Suit/Hunger bila dipakai), la
 - [ ] Rusakkan panel MANA SAJA (klik kanan komponen `SolarPanel` > Debug: Rusakkan panel), datangi RepairPoint, tekan E: panel mesin menampilkan panel rusak itu (status RUSAK), tombol PERBAIKI aktif; selesaikan minigame; panel jadi NORMAL.
 - [ ] Rusakkan dua panel: setelah memperbaiki yang pertama, panel yang sama tetap terbuka dengan pesan "Masih ada 1 panel rusak" dan menawarkan panel rusak berikutnya; prompt E memuat jumlah rusak.
 - [ ] Pesan TARS "Solar Panel N mengalami gangguan..." muncul dan tidak hilang sebelum tampil.
+
+## Tutorial bercerita (2026-11-28; BARU, belum dites di Unity)
+Siapkan: Play dari Day 1; klik kanan `TutorialManager` > `Debug: Hapus status tutorial tersimpan` bila perlu. Tidak perlu menjalankan menu setup.
+- [ ] Console tanpa error kompilasi; teks arahan tidak lagi berawalan `[PLACEHOLDER]`; `TutorialManager > Use Built In Story` tercentang.
+- [ ] Urutan arahan: Intro, Suit, CollectIce, PurifyWater, RemoveSuit, Hungry, Farming, OxygenGenerator, Harvest, Eat, Recap; Sleep hanya muncul setelah timer habis.
+- [ ] Hungry: setelah suit dilepas, bar Kenyang turun ke sekitar 32 persen dan TARS menjelaskan kenyang, HP, kentang; arahan Farming muncul setelah dialog Hungry ditutup (tidak sebelum).
+- [ ] Hungry dilewati tanpa dialog bila pemain sudah menanam dan menyiram sebelum langkah ini.
+- [ ] Pengingat lapar standar TARS (30 persen) mungkin muncul sesudahnya; itu normal.
+- [ ] Harvest: garis arah ke petak bertanaman; setelah panen arahan Eat muncul; tas kosong tanpa petak matang: garis ke Storage.
+- [ ] Recap muncul setelah makan, tidak menyuruh tidur; Sleep tetap menunggu timer habis.
+- [ ] Pengingat 120 detik hanya menampilkan baris "Sekarang: ...".
+- [ ] Hapus objek `TARSSystem`: Hungry dan Recap tetap selesai (arahan masuk Console), tutorial tidak macet.
+- [ ] Hari 2: tidak ada arahan; kenyang tidak diturunkan lagi.
+
+## Kartu panduan tutorial (2026-11-28; BARU, belum dites di Unity)
+Siapkan: terapkan setelah `tutorial-story.patch`. Play dari Day 1. Unity akan membuat file `.meta` baru untuk `TutorialDialogueSkin.cs`.
+- [ ] Console tanpa error kompilasi dan tanpa error saat kartu pertama muncul.
+- [ ] Pesan tutorial tampil di kartu tengah atas (di bawah timer), garis tepi cyan, lencana PANDUAN, "Langkah n dari 12", judul langkah. Tidak menimpa HUD kiri atas, kanan atas, dan timer pada 1920x1080 dan pada Game view lebih kecil.
+- [ ] Dialog biasa (ajak TARS bicara, Bed, Suit Station) tetap di kotak bawah seperti sebelumnya.
+- [ ] Baris terakhir "Sekarang: ..." tampil di kotak amber TUJUAN SEKARANG; baris sebelumnya tampil sebagai isi biasa; footer menunjukkan "Bagian x dari n" dan [E] lanjut/selesai.
+- [ ] E, Spasi, dan klik di mana saja melanjutkan; tombol X pada kartu menutup langsung dan callback tetap jalan (Hungry dan Recap tetap selesai).
+- [ ] Pengingat 120 detik: kartu hanya berisi judul dan kotak TUJUAN SEKARANG.
+- [ ] Pesan Hungry dan Recap lalu dialog biasa berurutan: kartu hilang sepenuhnya sebelum kotak bawah muncul, tidak ada dua panel terbuka bersamaan.
+- [ ] Garis arah tutorial tetap tersembunyi selama kartu terbuka dan muncul lagi setelah ditutup.
+- [ ] Day 2: tidak ada kartu.
+- [ ] (BARU, gaya terakota) Kartu hanya memakai warna terakota dan cokelat gelap (tanpa cyan/amber/merah); kotak portrait TARS di kiri menampilkan sprite TARS tidak buram (pixel art tajam); tab "TARS | PANDUAN" menempel di tepi atas dan tidak menimpa timer.
+- [ ] Teks gelap terbaca jelas di atas kotak terakota; kotak TUJUAN SEKARANG (lebih gelap) terbaca dengan teks krem.
+- [ ] Bila `downFrames` TARS kosong: kotak portrait tampil polos tanpa error.

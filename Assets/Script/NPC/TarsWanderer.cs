@@ -236,6 +236,9 @@ public class TarsWanderer : MonoBehaviour, IInteractable
 
     // ---------- Interaction ----------
 
+    /// <summary>Sprite hadap-bawah pertama, dipakai sebagai portrait TARS di kartu panduan tutorial (null bila belum diisi).</summary>
+    public Sprite PortraitSprite => downFrames != null && downFrames.Length > 0 ? downFrames[0] : null;
+
     /// <summary>Dipanggil saat pemain mengajak TARS bicara (E) dan dialog dibuka. Dipakai TutorialManager.</summary>
     public event System.Action OnPlayerTalked;
 

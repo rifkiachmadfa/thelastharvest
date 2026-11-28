@@ -114,6 +114,21 @@ public class HungerSystem : MonoBehaviour
         return gained;
     }
 
+    /// <summary>
+    /// Menurunkan kenyang ke proporsi tertentu (0 sampai 1 dari maksimum) bila saat ini lebih tinggi; tidak pernah menaikkan.
+    /// Dipakai TutorialManager untuk adegan "lapar" di Day 1 agar pemain merasakan lapar sebelum diminta menanam kentang.
+    /// Mengembalikan true bila kenyang benar-benar turun.
+    /// </summary>
+    public bool LowerSatietyTo(float fraction)
+    {
+        float target = Mathf.Clamp01(fraction) * maxSatiety;
+        if (target >= Satiety) return false;
+
+        Satiety = target;
+        OnSatietyChanged?.Invoke(Satiety, maxSatiety);
+        return true;
+    }
+
     [ContextMenu("Debug: Kenyang jadi 0")]
     private void DebugSetEmpty()
     {

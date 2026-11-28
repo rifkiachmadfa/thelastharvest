@@ -83,3 +83,19 @@ Format keputusan baru:
 - Keputusan: (b). Jeda 2 detik sesuai permintaan; HP maksimum 100 dan 3 HP per tick adalah USULAN (belum disetujui). Pemulihan HP: awalnya tidak ada; DIGANTI atas permintaan developer: HP pulih bertahap (USULAN +2 per 2 dtk) selama kenyang > 80 persen. `HungerSystem` (hitung mundur 60 dtk, `OnStarvationFailure`) tidak diubah.
 - Alasan: tidak mengubah array setting `ResourceManager` di scene; pola sama dengan hunger; perubahan kecil dan terpisah.
 - Dampak file/sistem: `HealthSystem`, `HudUI`, `MarsHealthSetup`. Terbuka: HP pulih atau tidak, dan Game Over memakai HP 0 atau batas 60 detik (HP penuh habis sekitar 67 dtk, mendekati batas itu).
+
+## Tutorial Day 1 bercerita dan adegan lapar (2026-11-28)
+- Tanggal: 2026-11-28
+- Konteks/masalah: Player menilai tutorial membingungkan; developer ingin hubungan antar resource terasa lewat cerita, termasuk merasakan lapar sebelum menanam kentang.
+- Opsi: (a) hanya menulis ulang teks; (b) teks + adegan lapar yang menurunkan kenyang sekali; (c) menurunkan kenyang awal lewat Inspector `HungerSystem`.
+- Keputusan: (b). Kenyang turun ke 32 persen (USULAN) sekali saat langkah `Hungry`, hanya menurunkan. (c) ditolak karena pemain sudah lapar sebelum paham apa pun. Teks bawaan kode dipakai lewat flag `useBuiltInStory` agar scene lama tidak perlu diedit.
+- Alasan: perubahan kecil, GDD 5.2 tetap (Day 1 tutorial terarah, bukan quest), urutan item GDD tidak berubah.
+- Dampak file/sistem: `TutorialManager`, `TutorialStepId`, `HungerSystem`, `TARSSystem`. Menunggu persetujuan developer: P-7 (tutorial mengubah kenyang) dan P-8 (balancing Food awal).
+
+## Kartu panduan tutorial terpisah dari dialog biasa (2026-11-28)
+- Tanggal: 2026-11-28
+- Konteks/masalah: Pesan tutorial dan dialog biasa tampil di kotak yang sama sehingga pemain sulit membedakannya.
+- Opsi: (a) panel kedua dengan input sendiri; (b) mengubah warna kotak dialog yang sama; (c) tampilan kedua (skin) yang dikelola `DialogueUI` yang sama.
+- Keputusan: (c). `DialogueUI` tetap satu-satunya pemilik input, `IsOpen`, dan callback (sistem lain bergantung padanya); `TutorialDialogueSkin` hanya menggambar. Dipicu oleh `TutorialDialogueInfo` yang dikirim lewat `TARSSystem.Announce`. UI dibuat lewat kode agar scene tidak perlu diedit.
+- Alasan: perubahan kecil, tidak ada risiko dua dialog terbuka bersamaan, tidak ada perubahan scene.
+- Dampak file/sistem: `TutorialDialogueSkin`, `DialogueUI`, `TARSSystem`, `TutorialManager`. Posisi dan warna adalah USULAN (konstanta di `TutorialDialogueSkin`).

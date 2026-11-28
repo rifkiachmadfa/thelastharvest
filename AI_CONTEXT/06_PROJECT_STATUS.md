@@ -51,6 +51,8 @@ Fondasi pemain dan NPC. Setara sekitar hari produksi 1–2 dari jadwal 15 hari: 
 - **[Dev]** Layer `Interactable` dipakai oleh TARS. Layer ini belum ada di `TagManager.asset` di repo.
 
 ## Belum diverifikasi / risiko
+- (2026-11-28) Kartu panduan tutorial (`tutorial-card-ui.patch`): belum dikompilasi/dites di Unity. Risiko: tata letak (VerticalLayoutGroup + ContentSizeFitter dibuat lewat kode) belum dilihat; posisi tengah atas bisa menimpa HUD di layar sangat sempit.
+- (2026-11-28) Tutorial bercerita (`tutorial-story.patch`): belum dikompilasi/dites di Unity. Dugaan penyebab tutorial membingungkan (belum dikonfirmasi): teks hanya instruksi tanpa alasan, teks PLACEHOLDER di scene, pemain belum lapar saat langkah Makan. Balancing: Food awal 50 cukup sekitar 13 hari (P-8).
 - Isi Inspector TARS dan Player di scene lokal (belum di-commit).
 - Milestone 3: kompilasi dan logika hanya dicek dengan stub di luar Unity [?]. Menu `Mars > Setup Bed and Fade`, fade, perpindahan Player ke SpawnPoint, dan interaksi E dengan Bed belum dites di Unity [?]. Collider dan posisi Bed/SpawnPoint ditentukan developer di scene [?].
 - GitHub belum memuat Milestone 1 (komponen ResourceManager di scene dan file .meta) saat audit; basis patch 2 adalah `20c1fc28` + patch 1 [?].

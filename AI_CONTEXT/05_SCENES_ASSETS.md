@@ -43,6 +43,7 @@ Scene lain di repo (`URP2DSceneTemplate`, demo asset pack `COPY SPRIGHT`) bukan 
 | `Assets/Script/Tutorial/TutorialManager.cs` | Tutorial Day 1: 8 langkah (termasuk RemoveSuit, 2026-11-17), syarat dikunci (urutan bebas), arahan TARS via `TARSSystem.Announce`, event, `TryCompleteStep`, simpan/lewati (PlayerPrefs, Tab), selesai saat Day 2. Objek `TutorialManager` di scene dibuat menu setup |
 | `Assets/Script/Tutorial/TutorialStepId.cs` | Enum 8 langkah tutorial (GDD 5.2 + RemoveSuit); urutan langkah = array `steps`, bukan nilai enum |
 | `Assets/Script/Tutorial/TutorialStepData.cs` | Data satu langkah (id, judul, baris TARS) |
+| `Assets/Script/Dialogue/TutorialDialogueSkin.cs` | Kartu panduan tutorial (UI dibuat lewat kode; hanya tampilan; dikelola `DialogueUI`). `.meta` dibuat Unity saat impor |
 | `Assets/Script/Tutorial/TutorialGuideUI.cs` | Garis UI dari tubuh Player ke tujuan langkah tutorial (hanya tampilan). Dipasang pada Canvas oleh menu setup |
 | `Assets/Editor/MarsTutorialSetup.cs` | Menu Editor `Mars > Setup Tutorial`: membuat objek `TutorialManager` dan memasang `TutorialGuideUI` pada Canvas |
 | `Assets/Editor/MarsTarsSystemSetup.cs` | Menu Editor `Mars > Setup TARS System`: membuat objek `TARSSystem`, menyambungkan `DialogueUI` dan `TarsWanderer.tarsSystem` |
